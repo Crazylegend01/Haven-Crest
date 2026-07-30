@@ -91,10 +91,57 @@ CREATE POLICY "Public INSERT on enquiries"
 
 
 -- ─────────────────────────────────────────────────────────────
+--  ADMIN READ POLICIES
+--  The admin dashboard (admin.html) uses the same anon key but
+--  is protected by a client-side passcode gate.
+--  Run these to allow the dashboard to fetch data.
+--
+--  ⚠ Note: because the anon key is visible in JS source, any
+--  determined person could also query these tables directly.
+--  For a static GitHub Pages site this is the accepted tradeoff.
+--  If you need stricter access, move the admin to a server-side
+--  route and use the Supabase service role key there instead.
+-- ─────────────────────────────────────────────────────────────
+
+-- waitlist: admin can read all rows
+CREATE POLICY "Admin SELECT on waitlist"
+  ON public.waitlist
+  FOR SELECT
+  TO anon
+  USING (true);
+
+-- suggestions: admin can read all rows
+CREATE POLICY "Admin SELECT on suggestions"
+  ON public.suggestions
+  FOR SELECT
+  TO anon
+  USING (true);
+
+-- suggestions: admin can toggle status (pending ↔ reviewed)
+CREATE POLICY "Admin UPDATE status on suggestions"
+  ON public.suggestions
+  FOR UPDATE
+  TO anon
+  USING (true)
+  WITH CHECK (status IN ('pending', 'reviewed'));
+
+
+-- ─────────────────────────────────────────────────────────────
+--  MIGRATION: add status column if table already exists
+--  (Safe to run even if column was already created by the
+--  CREATE TABLE statement above.)
+-- ─────────────────────────────────────────────────────────────
+ALTER TABLE public.suggestions
+  ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending';
+
+
+-- ─────────────────────────────────────────────────────────────
 --  OPTIONAL: Grant usage to the anon role explicitly
 --  (Supabase does this by default, but included for clarity)
 -- ─────────────────────────────────────────────────────────────
 GRANT USAGE  ON SCHEMA public TO anon;
-GRANT INSERT ON public.waitlist    TO anon;
-GRANT INSERT ON public.suggestions TO anon;
-GRANT INSERT ON public.enquiries   TO anon;
+GRANT INSERT          ON public.waitlist    TO anon;
+GRANT INSERT          ON public.suggestions TO anon;
+GRANT INSERT          ON public.enquiries   TO anon;
+GRANT SELECT          ON public.waitlist    TO anon;
+GRANT SELECT, UPDATE  ON public.suggestions TO anon;
