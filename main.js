@@ -9,7 +9,7 @@
  *  - Footer copyright year
  */
 
-import { submitWaitlist, submitSuggestion, showToast } from './supabaseClient.js';
+import { submitWaitlist, submitSuggestion, showToast } from './supabaseClient.js?v=3';
 
 
 /* ================================================================
