@@ -2,19 +2,13 @@
  * supabaseClient.js — Haven & Crest
  *
  * Supabase backend client, helper utilities, and Toast notification system.
- *
- * ─────────────────────────────────────────────────────────────────
- *  SETUP (two steps)
- *  1. Paste your credentials below (Supabase → Project Settings → API)
- *  2. Run supabase-setup.sql in your Supabase SQL Editor
- * ─────────────────────────────────────────────────────────────────
  */
 
 /* ================================================================
-   CREDENTIALS  ← replace these two strings
+   CREDENTIALS
    ================================================================ */
-const SUPABASE_URL      = '';   // "https://mszxguwxcpxvbpagtwdv.supabase.co"
-const SUPABASE_ANON_KEY = '';   // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zenhndXd4Y3B4dmJwYWd0d2R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzNTgyOTUsImV4cCI6MjEwMDkzNDI5NX0.0axpIOA369GUOKPqxBO5nfTqaXjI2EvVVB8wTViLB_o
+const SUPABASE_URL      = 'https://mszxguwxcpxvbpagtwdv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zenhndXd4Y3B4dmJwYWd0d2R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzNTgyOTUsImV4cCI6MjEwMDkzNDI5NX0.0axpIOA369GUOKPqxBO5nfTqaXjI2EvVVB8wTViLB_o';
 
 
 /* ================================================================
@@ -49,21 +43,12 @@ async function getClient() {
  * Submit a waitlist entry.
  *
  * @param {{
- *   full_name:   string,
- *   email:       string,
- *   user_role:   'student' | 'landlord' | 'agent',
+ *   full_name:    string,
+ *   email:        string,
+ *   user_role:    'student' | 'landlord' | 'agent',
  *   campus_name?: string
  * }} data
  * @returns {Promise<{ success: boolean, error?: string }>}
- *
- * @example
- *   import { submitWaitlist } from './supabaseClient.js';
- *   const res = await submitWaitlist({
- *     full_name:   'Alex Reid',
- *     email:       'alex@example.com',
- *     user_role:   'student',
- *     campus_name: 'UCL',
- *   });
  */
 export async function submitWaitlist(data) {
   const sb = await getClient();
@@ -89,14 +74,6 @@ export async function submitWaitlist(data) {
  *   suggestion_text: string
  * }} data
  * @returns {Promise<{ success: boolean, error?: string }>}
- *
- * @example
- *   import { submitSuggestion } from './supabaseClient.js';
- *   const res = await submitSuggestion({
- *     author_name:     'Sam',
- *     category:        'property',
- *     suggestion_text: 'More listings in Shoreditch please!',
- *   });
  */
 export async function submitSuggestion(data) {
   const sb = await getClient();
@@ -168,17 +145,10 @@ const _toastIcons = {
 
 /**
  * Display a toast notification that slides in from the top-right.
- * Stacks gracefully when multiple toasts appear.
- * Auto-dismisses after `duration` ms; user can close manually.
  *
  * @param {string}                          message
  * @param {'success' | 'error' | 'info'}   [type='info']
- * @param {number}                          [duration=4500]  ms before auto-dismiss
- *
- * @example
- *   import { showToast } from './supabaseClient.js';
- *   showToast('Saved!', 'success');
- *   showToast('Something went wrong.', 'error');
+ * @param {number}                          [duration=4500]
  */
 export function showToast(message, type = 'info', duration = 4500) {
   const root  = _getToastRoot();
@@ -201,7 +171,6 @@ export function showToast(message, type = 'info', duration = 4500) {
 
   root.appendChild(toast);
 
-  // Double-rAF ensures the browser has painted the initial (hidden) state
   requestAnimationFrame(() => {
     requestAnimationFrame(() => toast.classList.add('hc-toast--visible'));
   });
@@ -229,10 +198,4 @@ const _delay = ms => new Promise(r => setTimeout(r, ms));
 /* ================================================================
    INIT LOG
    ================================================================ */
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.info(
-    '[Haven & Crest] Running without a Supabase backend.\n' +
-    'To connect: open supabaseClient.js and paste your SUPABASE_URL + SUPABASE_ANON_KEY,\n' +
-    'then run supabase-setup.sql in your Supabase SQL Editor.'
-  );
-}
+console.info('[Haven & Crest] Supabase credentials loaded. Client will initialise on first request.');

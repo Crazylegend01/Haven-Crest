@@ -5,26 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
 
     <!-- ============================================================
-         Haven & Crest — Base Project
+         Haven & Crest — Campus Housing Platform
          Pure HTML · CSS · JavaScript — GitHub Pages ready
     ============================================================ -->
 
-    <title>Haven &amp; Crest — Exceptional Homes, Timeless Living</title>
-    <meta name="description" content="Haven &amp; Crest connects discerning buyers with the finest residential properties. Curated listings, white-glove service." />
+    <title>Haven &amp; Crest — Your Safe Harbour for Campus Housing</title>
+    <meta name="description" content="Connecting university students with verified landlords and trusted properties. No scams. No hidden fees." />
     <meta name="robots" content="index, follow" />
 
     <!-- Open Graph -->
     <meta property="og:title" content="Haven &amp; Crest" />
-    <meta property="og:description" content="Exceptional Homes, Timeless Living." />
+    <meta property="og:description" content="Your Safe Harbour for Campus Housing." />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="logo.png" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Haven &amp; Crest" />
-    <meta name="twitter:description" content="Exceptional Homes, Timeless Living." />
+    <meta name="twitter:description" content="Your Safe Harbour for Campus Housing." />
 
-    <!-- Favicon — uploaded shield logo -->
+    <!-- Favicon -->
     <link rel="icon" type="image/png" href="logo.png" />
 
     <!-- Google Fonts: Plus Jakarta Sans -->
@@ -42,19 +42,14 @@
 
     <!-- ============================================================
          PRELOADER
-         Full-screen cream overlay with animated gold shield + logo
     ============================================================ -->
     <div id="preloader" role="status" aria-label="Loading Haven &amp; Crest">
       <div class="preloader__inner">
-
-        <!-- Animated gold shield ring -->
         <div class="preloader__shield" aria-hidden="true">
-          <!-- Outer spinning arc ring -->
           <svg class="preloader__ring" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="60" cy="60" r="54" stroke="var(--accent-gold)" stroke-width="3"
               stroke-linecap="round" stroke-dasharray="100 240" />
           </svg>
-          <!-- Static shield icon centred inside the ring -->
           <svg class="preloader__icon" viewBox="0 0 60 68" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M30 2 L56 12 L56 34 C56 50 44 62 30 66 C16 62 4 50 4 34 L4 12 Z"
               stroke="var(--accent-gold)" stroke-width="2.5" fill="none" stroke-linejoin="round" />
@@ -66,14 +61,10 @@
             <line x1="21" y1="33" x2="39" y2="33" stroke="var(--accent-gold)" stroke-width="2.2" stroke-linecap="round" />
           </svg>
         </div>
-
-        <!-- Brand wordmark -->
         <p class="preloader__wordmark">Haven <span class="preloader__ampersand">&amp;</span> Crest</p>
         <p class="preloader__tagline">Loading your experience&hellip;</p>
-
       </div>
     </div>
-    <!-- /PRELOADER -->
 
 
     <!-- ============================================================
@@ -89,10 +80,10 @@
             <span class="nav__logo-text">Haven <span class="nav__ampersand">&amp;</span> Crest</span>
           </a>
           <nav class="nav__links" aria-label="Primary navigation">
-            <a href="#properties" class="nav__link">Properties</a>
-            <a href="#services" class="nav__link">Services</a>
+            <a href="#how-it-works" class="nav__link">How It Works</a>
             <a href="#about" class="nav__link">About</a>
-            <a href="#contact" class="nav__link nav__link--cta">Contact Us</a>
+            <a href="#suggestions" class="nav__link">Suggestions</a>
+            <a href="#waitlist" class="nav__link nav__link--cta">Join Waitlist</a>
           </nav>
           <button class="nav__burger" id="nav-burger"
             aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-menu">
@@ -100,10 +91,10 @@
           </button>
         </div>
         <div class="nav__mobile" id="mobile-menu" aria-hidden="true">
-          <a href="#properties" class="nav__mobile-link">Properties</a>
-          <a href="#services" class="nav__mobile-link">Services</a>
+          <a href="#how-it-works" class="nav__mobile-link">How It Works</a>
           <a href="#about" class="nav__mobile-link">About</a>
-          <a href="#contact" class="nav__mobile-link">Contact Us</a>
+          <a href="#suggestions" class="nav__mobile-link">Suggestions</a>
+          <a href="#waitlist" class="nav__mobile-link">Join Waitlist</a>
         </div>
       </header>
 
@@ -112,150 +103,162 @@
       <section class="hero" id="hero" aria-labelledby="hero-heading">
         <div class="hero__bg-overlay" aria-hidden="true"></div>
         <div class="container hero__content">
-          <span class="badge badge--gold hero__badge">Curated Luxury Real Estate</span>
+          <span class="badge badge--gold hero__badge">Campus Housing Platform</span>
           <h1 class="hero__heading" id="hero-heading">
-            Exceptional Homes.<br />Timeless Living.
+            Find Your Safe Harbour<br />Near Campus.
           </h1>
           <p class="hero__sub">
-            We connect discerning buyers with the finest residential properties —
-            from sun-drenched coastal estates to serene mountain retreats.
+            Connecting university students with verified landlords and trusted properties.
+            No scams. No hidden fees.
           </p>
           <div class="hero__actions">
-            <a href="#properties" class="btn btn--primary">Explore Properties</a>
-            <a href="#contact" class="btn btn--outline">Speak with an Advisor</a>
+            <a href="#waitlist" class="btn btn--primary hero__cta-scroll">Join the Waitlist</a>
+            <a href="#how-it-works" class="btn btn--outline">How It Works</a>
           </div>
-          <div class="hero__stats" aria-label="Key statistics">
+          <div class="hero__stats" aria-label="Platform highlights">
             <div class="hero__stat">
-              <span class="hero__stat-num">500+</span>
-              <span class="hero__stat-label">Curated Listings</span>
+              <span class="hero__stat-num">100%</span>
+              <span class="hero__stat-label">Verified Listings</span>
             </div>
             <div class="hero__stat-divider" aria-hidden="true"></div>
             <div class="hero__stat">
-              <span class="hero__stat-num">12</span>
-              <span class="hero__stat-label">Years of Excellence</span>
+              <span class="hero__stat-num">0</span>
+              <span class="hero__stat-label">Hidden Fees</span>
             </div>
             <div class="hero__stat-divider" aria-hidden="true"></div>
             <div class="hero__stat">
-              <span class="hero__stat-num">98%</span>
-              <span class="hero__stat-label">Client Satisfaction</span>
+              <span class="hero__stat-num">3</span>
+              <span class="hero__stat-label">User Types Served</span>
             </div>
           </div>
         </div>
       </section>
 
 
-      <!-- FEATURED PROPERTIES -->
-      <section class="section" id="properties" aria-labelledby="properties-heading">
+      <!-- HOW IT WORKS -->
+      <section class="section section--cream-surface" id="how-it-works" aria-labelledby="hiw-heading">
         <div class="container">
           <div class="section__header">
-            <span class="badge badge--gold">Featured Listings</span>
-            <h2 class="section__title" id="properties-heading">Properties of Distinction</h2>
-            <p class="section__sub">Handpicked residences that redefine what home can be.</p>
-          </div>
-          <div class="grid grid--3" id="properties-grid">
-            <article class="card" data-animate="fade-up">
-              <div class="card__image-wrap">
-                <div class="card__image card__image--placeholder" aria-label="Property image"></div>
-                <span class="badge badge--gold card__badge">For Sale</span>
-              </div>
-              <div class="card__body">
-                <h3 class="card__title">Oceanfront Villa</h3>
-                <p class="card__location">Malibu, California</p>
-                <p class="card__price">$8,750,000</p>
-                <ul class="card__specs" aria-label="Property specs">
-                  <li>5 Beds</li><li>6 Baths</li><li>6,200 sq ft</li>
-                </ul>
-              </div>
-            </article>
-            <article class="card" data-animate="fade-up" style="--delay:0.1s">
-              <div class="card__image-wrap">
-                <div class="card__image card__image--placeholder" aria-label="Property image"></div>
-                <span class="badge badge--gold card__badge">For Sale</span>
-              </div>
-              <div class="card__body">
-                <h3 class="card__title">Mountain Estate</h3>
-                <p class="card__location">Aspen, Colorado</p>
-                <p class="card__price">$12,400,000</p>
-                <ul class="card__specs" aria-label="Property specs">
-                  <li>7 Beds</li><li>8 Baths</li><li>9,100 sq ft</li>
-                </ul>
-              </div>
-            </article>
-            <article class="card" data-animate="fade-up" style="--delay:0.2s">
-              <div class="card__image-wrap">
-                <div class="card__image card__image--placeholder" aria-label="Property image"></div>
-                <span class="badge badge--outline card__badge">Coming Soon</span>
-              </div>
-              <div class="card__body">
-                <h3 class="card__title">Urban Penthouse</h3>
-                <p class="card__location">Manhattan, New York</p>
-                <p class="card__price">$22,000,000</p>
-                <ul class="card__specs" aria-label="Property specs">
-                  <li>4 Beds</li><li>5 Baths</li><li>5,400 sq ft</li>
-                </ul>
-              </div>
-            </article>
-          </div>
-          <div class="section__footer">
-            <a href="#" class="btn btn--outline">View All Listings</a>
-          </div>
-        </div>
-      </section>
-
-
-      <!-- SERVICES -->
-      <section class="section section--cream-surface" id="services" aria-labelledby="services-heading">
-        <div class="container">
-          <div class="section__header">
-            <span class="badge badge--gold">Our Expertise</span>
-            <h2 class="section__title" id="services-heading">White-Glove Services</h2>
-            <p class="section__sub">Every client receives our full attention from first viewing to final signature.</p>
+            <span class="badge badge--gold">The Platform</span>
+            <h2 class="section__title" id="hiw-heading">Built for Campus Life</h2>
+            <p class="section__sub">A safe, transparent marketplace connecting students, landlords, and agents.</p>
           </div>
           <div class="grid grid--3">
             <div class="service-card" data-animate="fade-up">
               <div class="service-card__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
                 </svg>
               </div>
-              <h3 class="service-card__title">Property Discovery</h3>
-              <p class="service-card__text">Personalised search powered by deep market intelligence and a curated network of exclusive off-market opportunities.</p>
+              <h3 class="service-card__title">Verified Properties</h3>
+              <p class="service-card__text">Every listing is checked against scam databases and verified for accuracy. Students can browse with confidence knowing what they see is real.</p>
             </div>
             <div class="service-card" data-animate="fade-up" style="--delay:0.1s">
               <div class="service-card__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                 </svg>
               </div>
-              <h3 class="service-card__title">Transaction Advisory</h3>
-              <p class="service-card__text">Skilled negotiation, legal co-ordination, and end-to-end support ensuring a seamless purchase from offer to close.</p>
+              <h3 class="service-card__title">Trusted Landlords</h3>
+              <p class="service-card__text">Landlords and agents are vetted and rated by the community. Build your reputation and connect with students who are ready to move in.</p>
             </div>
             <div class="service-card" data-animate="fade-up" style="--delay:0.2s">
               <div class="service-card__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
               </div>
-              <h3 class="service-card__title">Market Intelligence</h3>
-              <p class="service-card__text">Proprietary data and trend analysis that helps clients make confident, well-informed investment decisions.</p>
+              <h3 class="service-card__title">Scam Protection</h3>
+              <p class="service-card__text">AI-powered scam detection, transparent pricing, and community reporting keeps bad actors off the platform so you can focus on finding a home.</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- WAITLIST -->
+      <section class="section" id="waitlist" aria-labelledby="waitlist-heading">
+        <div class="container">
+          <div class="section__header">
+            <span class="badge badge--gold">Early Access</span>
+            <h2 class="section__title" id="waitlist-heading">Be First in the Door.</h2>
+            <p class="section__sub">Join the waitlist and get exclusive early access when we launch. No spam — just the launch invite.</p>
+          </div>
+
+          <div class="waitlist-card">
+            <form class="waitlist-form" id="waitlist-form" novalidate aria-label="Waitlist signup form">
+
+              <div class="waitlist-form__row">
+                <div class="form-group">
+                  <label class="form-label" for="wl-name">Full Name</label>
+                  <input class="form-input" type="text" id="wl-name" name="full_name"
+                    placeholder="Alex Reid" required autocomplete="name" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="wl-email">Email Address</label>
+                  <input class="form-input" type="email" id="wl-email" name="email"
+                    placeholder="alex@university.edu" required autocomplete="email" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" id="role-label">I am a&hellip;</label>
+                <div class="role-toggle" role="group" aria-labelledby="role-label">
+                  <input type="radio" name="user_role" id="role-student" value="student" class="role-toggle__input" checked />
+                  <label for="role-student" class="role-toggle__option">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                    </svg>
+                    Student
+                  </label>
+
+                  <input type="radio" name="user_role" id="role-landlord" value="landlord" class="role-toggle__input" />
+                  <label for="role-landlord" class="role-toggle__option">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    Landlord
+                  </label>
+
+                  <input type="radio" name="user_role" id="role-agent" value="agent" class="role-toggle__input" />
+                  <label for="role-agent" class="role-toggle__option">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                    Real Estate Agent
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="wl-campus">University / Campus Name</label>
+                <input class="form-input" type="text" id="wl-campus" name="campus_name"
+                  placeholder="e.g. University of Manchester" autocomplete="organization" />
+              </div>
+
+              <button class="btn btn--primary waitlist-form__submit" type="submit" id="waitlist-submit">
+                Secure My Spot
+              </button>
+              <p class="waitlist-form__notice" id="waitlist-notice" aria-live="polite"></p>
+
+            </form>
           </div>
         </div>
       </section>
 
 
       <!-- ABOUT -->
-      <section class="section" id="about" aria-labelledby="about-heading">
+      <section class="section section--cream-surface" id="about" aria-labelledby="about-heading">
         <div class="container about__inner">
           <div class="about__text" data-animate="fade-right">
-            <span class="badge badge--gold">Our Story</span>
-            <h2 class="about__title" id="about-heading">Built on Trust. Driven by Excellence.</h2>
+            <span class="badge badge--gold">Our Mission</span>
+            <h2 class="about__title" id="about-heading">A Safe Harbour — For Real.</h2>
             <p class="about__body">
-              Haven &amp; Crest was founded on a simple conviction: that the pursuit of an exceptional home
-              deserves an exceptional partner. For over a decade our advisors have guided clients through
-              the world's most sought-after addresses, combining intimate local knowledge with a global reach few can match.
+              Haven &amp; Crest was born from a simple frustration: finding student housing shouldn't feel like
+              navigating a minefield. We're building the platform we wish existed — transparent, verified,
+              and genuinely built for students and the landlords who want to serve them well.
             </p>
-            <a href="#contact" class="btn btn--primary">Meet Our Team</a>
+            <a href="#waitlist" class="btn btn--primary">Join the Waitlist</a>
           </div>
           <div class="about__visual" aria-hidden="true" data-animate="fade-left">
             <img src="logo.png" alt="" class="about__logo-display" />
@@ -264,35 +267,53 @@
       </section>
 
 
-      <!-- CONTACT -->
-      <section class="section section--cream-surface" id="contact" aria-labelledby="contact-heading">
+      <!-- COMMUNITY SUGGESTIONS -->
+      <section class="section" id="suggestions" aria-labelledby="suggestions-heading">
         <div class="container">
           <div class="section__header">
-            <span class="badge badge--gold">Get in Touch</span>
-            <h2 class="section__title" id="contact-heading">Begin Your Journey</h2>
-            <p class="section__sub">Tell us about your ideal property and we'll curate options tailored to you.</p>
+            <span class="badge badge--gold">Community</span>
+            <h2 class="section__title" id="suggestions-heading">Help Us Build The Ultimate Housing Platform</h2>
+            <p class="section__sub">Got an idea? Tell us what features matter most to you and we'll prioritise what students and landlords actually need.</p>
           </div>
-          <form class="contact-form" id="contact-form" novalidate aria-label="Contact form">
-            <div class="contact-form__row">
+
+          <div class="suggestion-card">
+            <form class="suggestion-form" id="suggestion-form" novalidate aria-label="Community suggestions form">
+
               <div class="form-group">
-                <label class="form-label" for="contact-name">Full Name</label>
-                <input class="form-input" type="text" id="contact-name" name="name"
-                  placeholder="Alexandra Reid" required autocomplete="name" />
+                <label class="form-label" for="sg-name">Your Name <span class="form-label--optional">(Optional)</span></label>
+                <input class="form-input" type="text" id="sg-name" name="author_name"
+                  placeholder="Anonymous" autocomplete="name" />
               </div>
+
               <div class="form-group">
-                <label class="form-label" for="contact-email">Email Address</label>
-                <input class="form-input" type="email" id="contact-email" name="email"
-                  placeholder="hello@example.com" required autocomplete="email" />
+                <label class="form-label" for="sg-category">Category</label>
+                <div class="select-wrap">
+                  <select class="form-input form-input--select" id="sg-category" name="category" required>
+                    <option value="" disabled selected>Select a category&hellip;</option>
+                    <option value="Feature Request">Feature Request</option>
+                    <option value="Scam Prevention">Scam Prevention</option>
+                    <option value="Price Tracking">Price Tracking</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <svg class="select-wrap__arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 6l4 4 4-4"/>
+                  </svg>
+                </div>
               </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="contact-msg">Tell Us About Your Dream Home</label>
-              <textarea class="form-input form-input--textarea" id="contact-msg" name="message"
-                placeholder="Location, size, style, budget…" rows="5"></textarea>
-            </div>
-            <button class="btn btn--primary contact-form__submit" type="submit">Send Enquiry</button>
-            <p class="contact-form__notice" id="form-notice" aria-live="polite"></p>
-          </form>
+
+              <div class="form-group">
+                <label class="form-label" for="sg-text">Your Suggestion</label>
+                <textarea class="form-input form-input--textarea" id="sg-text" name="suggestion_text"
+                  placeholder="Tell us what you'd love to see on the platform…"
+                  rows="5" required></textarea>
+              </div>
+
+              <button class="btn btn--primary suggestion-form__submit" type="submit" id="suggestion-submit">
+                Submit Suggestion
+              </button>
+
+            </form>
+          </div>
         </div>
       </section>
 
@@ -306,10 +327,10 @@
           </div>
           <p class="footer__copy">&copy; <span id="footer-year"></span> Haven &amp; Crest. All rights reserved.</p>
           <nav class="footer__links" aria-label="Footer navigation">
-            <a href="#properties" class="footer__link">Properties</a>
-            <a href="#services" class="footer__link">Services</a>
+            <a href="#how-it-works" class="footer__link">How It Works</a>
+            <a href="#waitlist" class="footer__link">Waitlist</a>
             <a href="#about" class="footer__link">About</a>
-            <a href="#contact" class="footer__link">Contact</a>
+            <a href="#suggestions" class="footer__link">Suggestions</a>
           </nav>
         </div>
       </footer>
@@ -317,7 +338,7 @@
     </div>
     <!-- /APP -->
 
-    <!-- Scripts — standard ES modules, no build step required -->
+    <!-- Scripts -->
     <script type="module" src="animations.js"></script>
     <script type="module" src="main.js"></script>
 

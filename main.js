@@ -4,14 +4,12 @@
  * Application entry point:
  *  - Mobile navigation toggle
  *  - Smooth-scroll anchor links (respects sticky nav height)
- *  - Contact form validation & Supabase submission
+ *  - Waitlist form — wired to submitWaitlist() in Supabase
+ *  - Community suggestions form — wired to submitSuggestion() in Supabase
  *  - Footer copyright year
- *
- * Supabase client, helper utilities, and Toast notifications live in
- * supabaseClient.js — import from there to wire up any new form.
  */
 
-import { submitEnquiry, showToast } from './supabaseClient.js';
+import { submitWaitlist, submitSuggestion, showToast } from './supabaseClient.js';
 
 
 /* ================================================================
@@ -33,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
       mobileMenu.classList.toggle('is-open', !isOpen);
     });
 
-    // Close mobile menu when any link inside it is clicked
     mobileMenu.querySelectorAll('.nav__mobile-link').forEach(link => {
       link.addEventListener('click', () => {
         burger.setAttribute('aria-expanded', 'false');
@@ -54,7 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', event => {
       const targetId = anchor.getAttribute('href').slice(1);
-      const target   = document.getElementById(targetId);
+      if (!targetId) return;
+      const target = document.getElementById(targetId);
       if (!target) return;
 
       event.preventDefault();
@@ -68,65 +66,146 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   /* ------------------------------------------------------------
-     3. CONTACT FORM
-     Validates inputs, submits via submitEnquiry(), shows a toast
-     for both success and error states.
+     3. WAITLIST FORM
+     Validates inputs, submits via submitWaitlist(), shows a toast
+     for both success and error states with loading state on button.
   ------------------------------------------------------------ */
-  const form = document.getElementById('contact-form');
+  const waitlistForm   = document.getElementById('waitlist-form');
+  const waitlistSubmit = document.getElementById('waitlist-submit');
 
-  if (form) {
-    form.addEventListener('submit', async event => {
+  if (waitlistForm) {
+    waitlistForm.addEventListener('submit', async event => {
       event.preventDefault();
 
-      const name    = form.querySelector('#contact-name')?.value.trim()  ?? '';
-      const email   = form.querySelector('#contact-email')?.value.trim() ?? '';
-      const message = form.querySelector('#contact-msg')?.value.trim()   ?? '';
-      const submit  = form.querySelector('.contact-form__submit');
+      const fullName   = waitlistForm.querySelector('#wl-name')?.value.trim()    ?? '';
+      const email      = waitlistForm.querySelector('#wl-email')?.value.trim()   ?? '';
+      const campusName = waitlistForm.querySelector('#wl-campus')?.value.trim()  ?? '';
+      const roleInput  = waitlistForm.querySelector('input[name="user_role"]:checked');
+      const userRole   = roleInput ? roleInput.value : 'student';
 
       // ── Client-side validation ──────────────────────────────
-      if (!name || !email || !message) {
-        showToast('Please fill in all required fields.', 'error');
+      if (!fullName) {
+        showToast('Please enter your full name.', 'error');
+        waitlistForm.querySelector('#wl-name')?.focus();
         return;
       }
-      if (!isValidEmail(email)) {
+      if (!email || !isValidEmail(email)) {
         showToast('Please enter a valid email address.', 'error');
+        waitlistForm.querySelector('#wl-email')?.focus();
         return;
       }
 
-      // ── Disable button while request is in flight ───────────
-      if (submit) {
-        submit.disabled    = true;
-        submit.textContent = 'Sending\u2026';
-      }
+      // ── Loading state ───────────────────────────────────────
+      setButtonLoading(waitlistSubmit, true, 'Securing your spot\u2026');
 
       try {
-        const result = await submitEnquiry({ name, email, message });
-        if (!result.success) throw new Error(result.error ?? 'Unknown error');
+        const payload = {
+          full_name:   fullName,
+          email:       email,
+          user_role:   userRole,
+          campus_name: campusName || null,
+        };
 
-        showToast(
-          'Thank you \u2014 your enquiry has been received. We\u2019ll be in touch shortly.',
-          'success',
-          6000
-        );
-        form.reset();
+        const result = await submitWaitlist(payload);
+
+        if (!result.success) {
+          // Handle duplicate email gracefully
+          if (result.error && result.error.toLowerCase().includes('duplicate')) {
+            showToast(
+              'You\u2019re already on the list \u2014 we\u2019ll be in touch!',
+              'info',
+              6000
+            );
+          } else {
+            throw new Error(result.error ?? 'Unknown error');
+          }
+        } else {
+          showToast(
+            'You\u2019re on the list! \uD83C\uDF89 We\u2019ll reach out when we launch.',
+            'success',
+            7000
+          );
+          waitlistForm.reset();
+          // Re-check the default radio after reset
+          const studentRadio = waitlistForm.querySelector('#role-student');
+          if (studentRadio) studentRadio.checked = true;
+        }
       } catch (err) {
-        console.error('[Haven & Crest] Form error:', err);
+        console.error('[Haven & Crest] Waitlist error:', err);
         showToast(
-          'Something went wrong. Please try again or email us directly.',
+          'Something went wrong. Please try again in a moment.',
           'error'
         );
       } finally {
-        if (submit) {
-          submit.disabled    = false;
-          submit.textContent = 'Send Enquiry';
-        }
+        setButtonLoading(waitlistSubmit, false, 'Secure My Spot');
       }
     });
   }
 
 
   /* ------------------------------------------------------------
-     4. FOOTER YEAR
+     4. COMMUNITY SUGGESTIONS FORM
+     Validates inputs, submits via submitSuggestion(), shows a
+     success notification and resets the form.
+  ------------------------------------------------------------ */
+  const suggestionForm   = document.getElementById('suggestion-form');
+  const suggestionSubmit = document.getElementById('suggestion-submit');
+
+  if (suggestionForm) {
+    suggestionForm.addEventListener('submit', async event => {
+      event.preventDefault();
+
+      const authorName     = suggestionForm.querySelector('#sg-name')?.value.trim()     ?? '';
+      const category       = suggestionForm.querySelector('#sg-category')?.value        ?? '';
+      const suggestionText = suggestionForm.querySelector('#sg-text')?.value.trim()     ?? '';
+
+      // ── Client-side validation ──────────────────────────────
+      if (!category) {
+        showToast('Please select a category.', 'error');
+        suggestionForm.querySelector('#sg-category')?.focus();
+        return;
+      }
+      if (!suggestionText) {
+        showToast('Please enter your suggestion before submitting.', 'error');
+        suggestionForm.querySelector('#sg-text')?.focus();
+        return;
+      }
+
+      // ── Loading state ───────────────────────────────────────
+      setButtonLoading(suggestionSubmit, true, 'Sending\u2026');
+
+      try {
+        const payload = {
+          author_name:     authorName || 'Anonymous',
+          category:        category,
+          suggestion_text: suggestionText,
+        };
+
+        const result = await submitSuggestion(payload);
+
+        if (!result.success) throw new Error(result.error ?? 'Unknown error');
+
+        showToast(
+          'Thank you! Your suggestion has been received and will help shape the platform.',
+          'success',
+          6000
+        );
+        suggestionForm.reset();
+      } catch (err) {
+        console.error('[Haven & Crest] Suggestion error:', err);
+        showToast(
+          'Something went wrong. Please try again.',
+          'error'
+        );
+      } finally {
+        setButtonLoading(suggestionSubmit, false, 'Submit Suggestion');
+      }
+    });
+  }
+
+
+  /* ------------------------------------------------------------
+     5. FOOTER YEAR
   ------------------------------------------------------------ */
   const yearEl = document.getElementById('footer-year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
@@ -141,4 +220,18 @@ document.addEventListener('DOMContentLoaded', () => {
 /** Basic email format guard. */
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+/**
+ * Toggle a submit button between loading and idle states.
+ * @param {HTMLButtonElement} btn
+ * @param {boolean}           loading
+ * @param {string}            label   Text to show when idle
+ */
+function setButtonLoading(btn, loading, label) {
+  if (!btn) return;
+  btn.disabled     = loading;
+  btn.textContent  = loading ? label : label;
+  btn.style.opacity = loading ? '0.72' : '';
+  btn.style.cursor  = loading ? 'not-allowed' : '';
 }
