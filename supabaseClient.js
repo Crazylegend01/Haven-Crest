@@ -13,8 +13,8 @@
 /* ================================================================
    CREDENTIALS  ← replace these two strings
    ================================================================ */
-const SUPABASE_URL      = '';   // e.g. "https://abcdefgh.supabase.co"
-const SUPABASE_ANON_KEY = '';   // your anon / public key
+const SUPABASE_URL      = '';   // e.g. "https://mszxguwxcpxvbpagtwdv.supabase.co"
+const SUPABASE_ANON_KEY = '';   // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zenhndXd4Y3B4dmJwYWd0d2R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzNTgyOTUsImV4cCI6MjEwMDkzNDI5NX0.0axpIOA369GUOKPqxBO5nfTqaXjI2EvVVB8wTViLB_o
 
 
 /* ================================================================
