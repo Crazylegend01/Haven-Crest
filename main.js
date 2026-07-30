@@ -1,56 +1,27 @@
 /**
  * main.js — Haven & Crest
  *
- * Pure vanilla JS — no build step, no dependencies.
+ * Application entry point:
+ *  - Mobile navigation toggle
+ *  - Smooth-scroll anchor links (respects sticky nav height)
+ *  - Contact form validation & Supabase submission
+ *  - Footer copyright year
  *
- * - Mobile navigation toggle
- * - Smooth-scroll anchor links (with sticky-nav offset)
- * - Contact form validation & submission
- * - Supabase client stub (activated by setting SUPABASE_URL + SUPABASE_ANON_KEY below)
- * - Footer copyright year
+ * Supabase client, helper utilities, and Toast notifications live in
+ * supabaseClient.js — import from there to wire up any new form.
  */
 
-
-/* ================================================================
-   SUPABASE CONFIGURATION
-   To enable backend persistence:
-     1. Create a project at https://supabase.com
-     2. Paste your Project URL and anon key into the constants below.
-     3. Create a table called `enquiries` with columns:
-           name    text  not null
-           email   text  not null
-           message text
-   ================================================================ */
-const SUPABASE_URL  = '';   // e.g. 'https://xyzcompany.supabase.co'
-const SUPABASE_ANON = '';   // e.g. 'eyJhbGci...'
-
-/** Lazy-loaded Supabase client (null when credentials are not set). */
-let supabase = null;
-
-if (SUPABASE_URL && SUPABASE_ANON) {
-  // Load from CDN — no build step required
-  import('https://esm.sh/@supabase/supabase-js@2')
-    .then(({ createClient }) => {
-      supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
-      console.info('[Haven & Crest] Supabase client ready.');
-    })
-    .catch(err => {
-      console.warn('[Haven & Crest] Could not load Supabase:', err.message);
-    });
-} else {
-  console.info(
-    '[Haven & Crest] Running without Supabase — ' +
-    'set SUPABASE_URL and SUPABASE_ANON in main.js to enable backend storage.'
-  );
-}
+import { submitEnquiry, showToast } from './supabaseClient.js';
 
 
 /* ================================================================
-   DOM-READY
+   DOM-READY INITIALISATION
    ================================================================ */
 document.addEventListener('DOMContentLoaded', () => {
 
-  /* ---- MOBILE NAV TOGGLE ---- */
+  /* ------------------------------------------------------------
+     1. MOBILE NAV TOGGLE
+  ------------------------------------------------------------ */
   const burger     = document.getElementById('nav-burger');
   const mobileMenu = document.getElementById('mobile-menu');
 
@@ -62,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
       mobileMenu.classList.toggle('is-open', !isOpen);
     });
 
-    // Close on mobile link click
+    // Close mobile menu when any link inside it is clicked
     mobileMenu.querySelectorAll('.nav__mobile-link').forEach(link => {
       link.addEventListener('click', () => {
         burger.setAttribute('aria-expanded', 'false');
@@ -73,72 +44,90 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  /* ---- SMOOTH SCROLL WITH NAV OFFSET ---- */
+  /* ------------------------------------------------------------
+     2. SMOOTH-SCROLL FOR ANCHOR LINKS
+     CSS scroll-behavior handles most cases; this adds the correct
+     offset for the sticky navigation bar.
+  ------------------------------------------------------------ */
   const nav = document.getElementById('main-nav');
 
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', e => {
-      const id     = anchor.getAttribute('href').slice(1);
-      const target = id ? document.getElementById(id) : null;
+    anchor.addEventListener('click', event => {
+      const targetId = anchor.getAttribute('href').slice(1);
+      const target   = document.getElementById(targetId);
       if (!target) return;
-      e.preventDefault();
-      const offset = (nav ? nav.offsetHeight : 0) + 16;
-      const top    = target.getBoundingClientRect().top + window.scrollY - offset;
+
+      event.preventDefault();
+
+      const navHeight = nav ? nav.offsetHeight : 0;
+      const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 16;
+
       window.scrollTo({ top, behavior: 'smooth' });
     });
   });
 
 
-  /* ---- CONTACT FORM ---- */
-  const form   = document.getElementById('contact-form');
-  const notice = document.getElementById('form-notice');
+  /* ------------------------------------------------------------
+     3. CONTACT FORM
+     Validates inputs, submits via submitEnquiry(), shows a toast
+     for both success and error states.
+  ------------------------------------------------------------ */
+  const form = document.getElementById('contact-form');
 
-  if (form && notice) {
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
+  if (form) {
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
 
       const name    = form.querySelector('#contact-name')?.value.trim()  ?? '';
       const email   = form.querySelector('#contact-email')?.value.trim() ?? '';
       const message = form.querySelector('#contact-msg')?.value.trim()   ?? '';
       const submit  = form.querySelector('.contact-form__submit');
 
-      // Validate
+      // ── Client-side validation ──────────────────────────────
       if (!name || !email || !message) {
-        showNotice('Please fill in all required fields.', 'error');
+        showToast('Please fill in all required fields.', 'error');
         return;
       }
       if (!isValidEmail(email)) {
-        showNotice('Please enter a valid email address.', 'error');
+        showToast('Please enter a valid email address.', 'error');
         return;
       }
 
-      setSubmitting(submit, true);
+      // ── Disable button while request is in flight ───────────
+      if (submit) {
+        submit.disabled    = true;
+        submit.textContent = 'Sending\u2026';
+      }
 
       try {
-        if (supabase) {
-          const { error } = await supabase
-            .from('enquiries')
-            .insert([{ name, email, message }]);
-          if (error) throw new Error(error.message);
-        } else {
-          // No backend — log locally and simulate success
-          console.log('[Haven & Crest] Enquiry (no backend):', { name, email, message });
-          await delay(700);
-        }
+        const result = await submitEnquiry({ name, email, message });
+        if (!result.success) throw new Error(result.error ?? 'Unknown error');
 
-        showNotice('Thank you — your enquiry has been received. We will be in touch shortly.', 'success');
+        showToast(
+          'Thank you \u2014 your enquiry has been received. We\u2019ll be in touch shortly.',
+          'success',
+          6000
+        );
         form.reset();
       } catch (err) {
         console.error('[Haven & Crest] Form error:', err);
-        showNotice('Something went wrong. Please try again.', 'error');
+        showToast(
+          'Something went wrong. Please try again or email us directly.',
+          'error'
+        );
       } finally {
-        setSubmitting(submit, false);
+        if (submit) {
+          submit.disabled    = false;
+          submit.textContent = 'Send Enquiry';
+        }
       }
     });
   }
 
 
-  /* ---- FOOTER YEAR ---- */
+  /* ------------------------------------------------------------
+     4. FOOTER YEAR
+  ------------------------------------------------------------ */
   const yearEl = document.getElementById('footer-year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 
@@ -149,23 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
    HELPERS
    ================================================================ */
 
-function showNotice(msg, type) {
-  const el = document.getElementById('form-notice');
-  if (!el) return;
-  el.textContent = msg;
-  el.className   = `contact-form__notice contact-form__notice--${type}`;
-}
-
-function setSubmitting(btn, isSubmitting) {
-  if (!btn) return;
-  btn.disabled    = isSubmitting;
-  btn.textContent = isSubmitting ? 'Sending…' : 'Send Enquiry';
-}
-
+/** Basic email format guard. */
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
