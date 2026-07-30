@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+
+    <!-- ============================================================
+         Haven & Crest — Base Project
+         A luxury real-estate discovery experience
+    ============================================================ -->
+
+    <title>Haven &amp; Crest — Exceptional Homes, Timeless Living</title>
+    <meta name="description" content="Haven &amp; Crest connects discerning buyers with the finest residential properties. Curated listings, white-glove service." />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Haven &amp; Crest" />
+    <meta property="og:description" content="Exceptional Homes, Timeless Living." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/logo.png" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Haven &amp; Crest" />
+    <meta name="twitter:description" content="Exceptional Homes, Timeless Living." />
+
+    <!-- Favicon — the uploaded shield logo -->
+    <link rel="icon" type="image/png" href="/logo.png" />
+
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+
+    <!-- ============================================================
+         PRELOADER
+         Full-screen cream overlay with animated gold shield + logo
+    ============================================================ -->
+    <div id="preloader" role="status" aria-label="Loading Haven &amp; Crest">
+      <div class="preloader__inner">
+
+        <!-- Animated gold shield ring -->
+        <div class="preloader__shield" aria-hidden="true">
+          <!-- Outer spinning ring -->
+          <svg class="preloader__ring" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="54" stroke="var(--accent-gold)" stroke-width="3" stroke-linecap="round"
+              stroke-dasharray="100 240" />
+          </svg>
+
+          <!-- Static shield icon centred inside the ring -->
+          <svg class="preloader__icon" viewBox="0 0 60 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Shield body -->
+            <path
+              d="M30 2 L56 12 L56 34 C56 50 44 62 30 66 C16 62 4 50 4 34 L4 12 Z"
+              stroke="var(--accent-gold)"
+              stroke-width="2.5"
+              fill="none"
+              stroke-linejoin="round"
+            />
+            <!-- Inner chevron (house roofline) -->
+            <polyline
+              points="18,36 30,26 42,36"
+              stroke="var(--accent-gold-bright)"
+              stroke-width="2"
+              fill="none"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <!-- H letterform -->
+            <line x1="21" y1="22" x2="21" y2="44" stroke="var(--accent-gold)" stroke-width="2.2" stroke-linecap="round" />
+            <line x1="39" y1="22" x2="39" y2="44" stroke="var(--accent-gold)" stroke-width="2.2" stroke-linecap="round" />
+            <line x1="21" y1="33" x2="39" y2="33" stroke="var(--accent-gold)" stroke-width="2.2" stroke-linecap="round" />
+          </svg>
+        </div>
+
+        <!-- Brand wordmark -->
+        <p class="preloader__wordmark">Haven <span class="preloader__ampersand">&amp;</span> Crest</p>
+        <p class="preloader__tagline">Loading your experience…</p>
+
+      </div>
+    </div>
+    <!-- /PRELOADER -->
+
+
+    <!-- ============================================================
+         APP SHELL
+         Wraps all page content; hidden while preloader is active
+    ============================================================ -->
+    <div id="app" class="app" aria-hidden="true">
+
+      <!-- ---- NAVIGATION ---- -->
+      <header class="nav" id="main-nav">
+        <div class="container nav__inner">
+          <!-- Logo -->
+          <a href="/" class="nav__logo" aria-label="Haven &amp; Crest home">
+            <img src="/logo.png" alt="Haven &amp; Crest shield logo" class="nav__logo-img" />
+            <span class="nav__logo-text">Haven <span class="nav__ampersand">&amp;</span> Crest</span>
+          </a>
+
+          <!-- Navigation links -->
+          <nav class="nav__links" aria-label="Primary navigation">
+            <a href="#properties" class="nav__link">Properties</a>
+            <a href="#services" class="nav__link">Services</a>
+            <a href="#about" class="nav__link">About</a>
+            <a href="#contact" class="nav__link nav__link--cta">Contact Us</a>
+          </nav>
+
+          <!-- Mobile menu toggle -->
+          <button class="nav__burger" id="nav-burger" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-menu">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+
+        <!-- Mobile dropdown -->
+        <div class="nav__mobile" id="mobile-menu" aria-hidden="true">
+          <a href="#properties" class="nav__mobile-link">Properties</a>
+          <a href="#services" class="nav__mobile-link">Services</a>
+          <a href="#about" class="nav__mobile-link">About</a>
+          <a href="#contact" class="nav__mobile-link">Contact Us</a>
+        </div>
+      </header>
+
+
+      <!-- ---- HERO ---- -->
+      <section class="hero" id="hero" aria-labelledby="hero-heading">
+        <div class="hero__bg-overlay" aria-hidden="true"></div>
+        <div class="container hero__content">
+          <span class="badge badge--gold hero__badge">Curated Luxury Real Estate</span>
+          <h1 class="hero__heading" id="hero-heading">
+            Exceptional Homes.<br />Timeless Living.
+          </h1>
+          <p class="hero__sub">
+            We connect discerning buyers with the finest residential properties —
+            from sun-drenched coastal estates to serene mountain retreats.
+          </p>
+          <div class="hero__actions">
+            <a href="#properties" class="btn btn--primary">Explore Properties</a>
+            <a href="#contact" class="btn btn--outline">Speak with an Advisor</a>
+          </div>
+
+          <!-- Stats row -->
+          <div class="hero__stats" aria-label="Key statistics">
+            <div class="hero__stat">
+              <span class="hero__stat-num">500+</span>
+              <span class="hero__stat-label">Curated Listings</span>
+            </div>
+            <div class="hero__stat-divider" aria-hidden="true"></div>
+            <div class="hero__stat">
+              <span class="hero__stat-num">12</span>
+              <span class="hero__stat-label">Years of Excellence</span>
+            </div>
+            <div class="hero__stat-divider" aria-hidden="true"></div>
+            <div class="hero__stat">
+              <span class="hero__stat-num">98%</span>
+              <span class="hero__stat-label">Client Satisfaction</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ---- FEATURED PROPERTIES ---- -->
+      <section class="section" id="properties" aria-labelledby="properties-heading">
+        <div class="container">
+          <div class="section__header">
+            <span class="badge badge--gold">Featured Listings</span>
+            <h2 class="section__title" id="properties-heading">Properties of Distinction</h2>
+            <p class="section__sub">Handpicked residences that redefine what home can be.</p>
+          </div>
+
+          <!-- Property cards — populated by JS or a future CMS integration -->
+          <div class="grid grid--3" id="properties-grid">
+            <!-- Placeholder cards rendered by main.js on first build -->
+            <article class="card" data-animate="fade-up">
+              <div class="card__image-wrap">
+                <div class="card__image card__image--placeholder" aria-label="Property image"></div>
+                <span class="badge badge--gold card__badge">For Sale</span>
+              </div>
+              <div class="card__body">
+                <h3 class="card__title">Oceanfront Villa</h3>
+                <p class="card__location">Malibu, California</p>
+                <p class="card__price">$8,750,000</p>
+                <ul class="card__specs" aria-label="Property specs">
+                  <li>5 Beds</li>
+                  <li>6 Baths</li>
+                  <li>6,200 sq ft</li>
+                </ul>
+              </div>
+            </article>
+
+            <article class="card" data-animate="fade-up" style="--delay:0.1s">
+              <div class="card__image-wrap">
+                <div class="card__image card__image--placeholder" aria-label="Property image"></div>
+                <span class="badge badge--gold card__badge">For Sale</span>
+              </div>
+              <div class="card__body">
+                <h3 class="card__title">Mountain Estate</h3>
+                <p class="card__location">Aspen, Colorado</p>
+                <p class="card__price">$12,400,000</p>
+                <ul class="card__specs" aria-label="Property specs">
+                  <li>7 Beds</li>
+                  <li>8 Baths</li>
+                  <li>9,100 sq ft</li>
+                </ul>
+              </div>
+            </article>
+
+            <article class="card" data-animate="fade-up" style="--delay:0.2s">
+              <div class="card__image-wrap">
+                <div class="card__image card__image--placeholder" aria-label="Property image"></div>
+                <span class="badge badge--outline card__badge">Coming Soon</span>
+              </div>
+              <div class="card__body">
+                <h3 class="card__title">Urban Penthouse</h3>
+                <p class="card__location">Manhattan, New York</p>
+                <p class="card__price">$22,000,000</p>
+                <ul class="card__specs" aria-label="Property specs">
+                  <li>4 Beds</li>
+                  <li>5 Baths</li>
+                  <li>5,400 sq ft</li>
+                </ul>
+              </div>
+            </article>
+          </div>
+
+          <div class="section__footer">
+            <a href="#" class="btn btn--outline">View All Listings</a>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ---- SERVICES ---- -->
+      <section class="section section--cream-surface" id="services" aria-labelledby="services-heading">
+        <div class="container">
+          <div class="section__header">
+            <span class="badge badge--gold">Our Expertise</span>
+            <h2 class="section__title" id="services-heading">White-Glove Services</h2>
+            <p class="section__sub">Every client receives our full attention from first viewing to final signature.</p>
+          </div>
+
+          <div class="grid grid--3">
+            <div class="service-card" data-animate="fade-up">
+              <div class="service-card__icon" aria-hidden="true">
+                <!-- Search icon -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+              </div>
+              <h3 class="service-card__title">Property Discovery</h3>
+              <p class="service-card__text">Personalised search powered by deep market intelligence and a curated network of exclusive off-market opportunities.</p>
+            </div>
+
+            <div class="service-card" data-animate="fade-up" style="--delay:0.1s">
+              <div class="service-card__icon" aria-hidden="true">
+                <!-- Handshake icon -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </div>
+              <h3 class="service-card__title">Transaction Advisory</h3>
+              <p class="service-card__text">Skilled negotiation, legal co-ordination, and end-to-end support ensuring a seamless purchase from offer to close.</p>
+            </div>
+
+            <div class="service-card" data-animate="fade-up" style="--delay:0.2s">
+              <div class="service-card__icon" aria-hidden="true">
+                <!-- Trend icon -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+              </div>
+              <h3 class="service-card__title">Market Intelligence</h3>
+              <p class="service-card__text">Proprietary data and trend analysis that helps clients make confident, well-informed investment decisions.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ---- ABOUT / CTA ---- -->
+      <section class="section" id="about" aria-labelledby="about-heading">
+        <div class="container about__inner">
+          <div class="about__text" data-animate="fade-right">
+            <span class="badge badge--gold">Our Story</span>
+            <h2 class="about__title" id="about-heading">Built on Trust. Driven by Excellence.</h2>
+            <p class="about__body">
+              Haven &amp; Crest was founded on a simple conviction: that the pursuit of an exceptional home
+              deserves an exceptional partner. For over a decade our advisors have guided clients through
+              the world's most sought-after addresses, combining intimate local knowledge with a global
+              reach few can match.
+            </p>
+            <a href="#contact" class="btn btn--primary">Meet Our Team</a>
+          </div>
+          <div class="about__visual" aria-hidden="true" data-animate="fade-left">
+            <img src="/logo.png" alt="" class="about__logo-display" />
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ---- CONTACT ---- -->
+      <section class="section section--cream-surface" id="contact" aria-labelledby="contact-heading">
+        <div class="container">
+          <div class="section__header">
+            <span class="badge badge--gold">Get in Touch</span>
+            <h2 class="section__title" id="contact-heading">Begin Your Journey</h2>
+            <p class="section__sub">Tell us about your ideal property and we'll curate options tailored to you.</p>
+          </div>
+
+          <form class="contact-form" id="contact-form" novalidate aria-label="Contact form">
+            <div class="contact-form__row">
+              <div class="form-group">
+                <label class="form-label" for="contact-name">Full Name</label>
+                <input class="form-input" type="text" id="contact-name" name="name" placeholder="Alexandra Reid" required autocomplete="name" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="contact-email">Email Address</label>
+                <input class="form-input" type="email" id="contact-email" name="email" placeholder="hello@example.com" required autocomplete="email" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="contact-msg">Tell Us About Your Dream Home</label>
+              <textarea class="form-input form-input--textarea" id="contact-msg" name="message" placeholder="Location, size, style, budget…" rows="5"></textarea>
+            </div>
+            <button class="btn btn--primary contact-form__submit" type="submit">Send Enquiry</button>
+            <p class="contact-form__notice" id="form-notice" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>
+
+
+      <!-- ---- FOOTER ---- -->
+      <footer class="footer">
+        <div class="container footer__inner">
+          <div class="footer__brand">
+            <img src="/logo.png" alt="Haven &amp; Crest" class="footer__logo" />
+            <span class="footer__name">Haven &amp; Crest</span>
+          </div>
+          <p class="footer__copy">&copy; <span id="footer-year"></span> Haven &amp; Crest. All rights reserved.</p>
+          <nav class="footer__links" aria-label="Footer navigation">
+            <a href="#properties" class="footer__link">Properties</a>
+            <a href="#services" class="footer__link">Services</a>
+            <a href="#about" class="footer__link">About</a>
+            <a href="#contact" class="footer__link">Contact</a>
+          </nav>
+        </div>
+      </footer>
+
+    </div>
+    <!-- /APP -->
+
+
+    <!-- ============================================================
+         Scripts — loaded as modules so ES imports work
+    ============================================================ -->
+    <script type="module" src="/animations.js"></script>
+    <script type="module" src="/main.js"></script>
+
+  </body>
+</html>

@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Haven & Crest"
+version = "1.0.0"
+id = "artifacts/haven-crest"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20299
+
+[services.development]
+run = "pnpm --filter @workspace/haven-crest run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/haven-crest", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/haven-crest/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20299"
+BASE_PATH = "/"
