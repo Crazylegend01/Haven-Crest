@@ -43,6 +43,47 @@ var _suggestionFilter = 'all';
 
 
 /* ================================================================
+   SECURITY AUDIT LOGGING
+   Fire-and-forget — never throws, never blocks UI.
+   ================================================================ */
+function logAdminEvent(action_type, risk_level, metadata) {
+  try {
+    var sb = getClient();
+    var payload = {
+      action_type: action_type,
+      ip_address:  null,        // fetched async below
+      user_agent:  navigator.userAgent,
+      metadata: Object.assign({
+        page:      location.pathname,
+        referrer:  document.referrer || null,
+        timestamp: new Date().toISOString(),
+      }, metadata || {}),
+      risk_level: risk_level || 'LOW',
+    };
+
+    // Best-effort IP fetch (3 s timeout), then insert
+    var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = controller ? setTimeout(function () { controller.abort(); }, 3000) : null;
+
+    var ipPromise = fetch('https://api.ipify.org?format=json', controller ? { signal: controller.signal } : {})
+      .then(function (r) { return r.json(); })
+      .then(function (d) { return d.ip || null; })
+      .catch(function () { return null; });
+
+    ipPromise.then(function (ip) {
+      if (timer) clearTimeout(timer);
+      payload.ip_address = ip;
+      sb.from('security_audit_logs').insert([payload]).catch(function (err) {
+        console.warn('[Admin Security] Could not write audit log:', err && err.message);
+      });
+    });
+  } catch (err) {
+    console.warn('[Admin Security] logAdminEvent failed:', err && err.message);
+  }
+}
+
+
+/* ================================================================
    DOM READY
    ================================================================ */
 document.addEventListener('DOMContentLoaded', function () {
@@ -73,46 +114,14 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   /* ----------------------------------------------------------
-     SKIP LOCK IF ALREADY AUTHENTICATED THIS SESSION
-  ---------------------------------------------------------- */
-  if (sessionStorage.getItem(SESSION_KEY) === 'true') {
-    revealDashboard(lockScreen, adminShell);
-    loadDashboard();
-    return;
-  }
-
-  /* ----------------------------------------------------------
-     PASSCODE FORM
-  ---------------------------------------------------------- */
-  if (lockForm) {
-    lockForm.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var entered = lockInput ? lockInput.value.trim() : '';
-
-      if (entered === ADMIN_PASSCODE) {
-        lockError.textContent = '';
-        if (lockInput) lockInput.value = '';
-        sessionStorage.setItem(SESSION_KEY, 'true');
-        revealDashboard(lockScreen, adminShell);
-        loadDashboard();
-      } else {
-        lockError.textContent = 'Incorrect passcode. Please try again.';
-        if (lockInput) lockInput.value = '';
-        if (lockInput) lockInput.focus();
-        lockForm.classList.add('lock-form--shake');
-        lockForm.addEventListener('animationend', function () {
-          lockForm.classList.remove('lock-form--shake');
-        }, { once: true });
-      }
-    });
-  }
-
-  /* ----------------------------------------------------------
      SIGN OUT
+     ⚠ IMPORTANT: must be wired BEFORE the early-return below
+     so the button works even when the session is already active.
   ---------------------------------------------------------- */
   var signoutBtn = document.getElementById('admin-signout');
   if (signoutBtn) {
     signoutBtn.addEventListener('click', function () {
+      logAdminEvent('ADMIN_SIGNOUT', 'LOW', {});
       sessionStorage.removeItem(SESSION_KEY);
       window.location.reload();
     });
@@ -132,6 +141,43 @@ document.addEventListener('DOMContentLoaded', function () {
   var retryBtn = document.getElementById('admin-error-retry');
   if (retryBtn) {
     retryBtn.addEventListener('click', loadDashboard);
+  }
+
+  /* ----------------------------------------------------------
+     SKIP LOCK IF ALREADY AUTHENTICATED THIS SESSION
+  ---------------------------------------------------------- */
+  if (sessionStorage.getItem(SESSION_KEY) === 'true') {
+    revealDashboard(lockScreen, adminShell);
+    loadDashboard();
+    return; // all listeners already attached above ✓
+  }
+
+  /* ----------------------------------------------------------
+     PASSCODE FORM
+  ---------------------------------------------------------- */
+  if (lockForm) {
+    lockForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var entered = lockInput ? lockInput.value.trim() : '';
+
+      if (entered === ADMIN_PASSCODE) {
+        lockError.textContent = '';
+        if (lockInput) lockInput.value = '';
+        sessionStorage.setItem(SESSION_KEY, 'true');
+        logAdminEvent('ADMIN_LOGIN', 'LOW', {});
+        revealDashboard(lockScreen, adminShell);
+        loadDashboard();
+      } else {
+        lockError.textContent = 'Incorrect passcode. Please try again.';
+        logAdminEvent('ADMIN_LOGIN_FAILED', 'HIGH', {});
+        if (lockInput) lockInput.value = '';
+        if (lockInput) lockInput.focus();
+        lockForm.classList.add('lock-form--shake');
+        lockForm.addEventListener('animationend', function () {
+          lockForm.classList.remove('lock-form--shake');
+        }, { once: true });
+      }
+    });
   }
 
 });

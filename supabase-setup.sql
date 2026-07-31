@@ -58,6 +58,20 @@ COMMENT ON TABLE public.enquiries IS 'Contact form submissions from the website.
 
 
 -- ─────────────────────────────────────────────────────────────
+--  PROFILES TABLE (optional — for Supabase Auth admin role)
+--  Required if you want the stricter audit-log RLS policy
+--  that checks is_admin = true on a profiles row.
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id       UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  is_admin BOOLEAN NOT NULL DEFAULT false
+);
+
+COMMENT ON TABLE  public.profiles          IS 'Per-user profile data tied to Supabase Auth.';
+COMMENT ON COLUMN public.profiles.is_admin IS 'Grants access to admin-only RLS policies when true.';
+
+
+-- ─────────────────────────────────────────────────────────────
 --  ROW LEVEL SECURITY
 --  Enable RLS on all tables, then add public INSERT policies so
 --  anonymous visitors can submit data. All other operations
@@ -66,6 +80,7 @@ COMMENT ON TABLE public.enquiries IS 'Contact form submissions from the website.
 ALTER TABLE public.waitlist    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.suggestions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.enquiries   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles    ENABLE ROW LEVEL SECURITY;
 
 
 -- waitlist: anyone can insert a row
@@ -135,9 +150,21 @@ ALTER TABLE public.suggestions
 
 -- =============================================================
 --  SECURITY AUDIT & FRAUD LOG
+--
 --  Records metadata for flagged or sensitive actions.
 --  IP addresses are captured client-side and stored for
 --  fraud investigation.
+--
+--  action_type values in use:
+--    WAITLIST_SUBMIT     — successful waitlist signup
+--    SUGGESTION_SUBMIT   — successful suggestion submission
+--    RATE_LIMIT_HIT      — client-side rate limit exceeded
+--    BOT_DETECTED        — honeypot field was filled
+--    SUSPICIOUS_CONTENT  — scam/spam keywords found in input
+--    DUPLICATE_EMAIL     — email already on waitlist
+--    ADMIN_LOGIN         — successful admin passcode entry
+--    ADMIN_LOGIN_FAILED  — wrong passcode attempt
+--    ADMIN_SIGNOUT       — admin clicked Sign Out
 -- =============================================================
 
 CREATE TABLE IF NOT EXISTS public.security_audit_logs (
@@ -145,9 +172,6 @@ CREATE TABLE IF NOT EXISTS public.security_audit_logs (
   created_at  TIMESTAMPTZ NOT NULL    DEFAULT now(),
   user_id     UUID        REFERENCES auth.users(id) ON DELETE SET NULL,
   action_type TEXT        NOT NULL,
-  -- e.g. WAITLIST_SUBMIT | SUGGESTION_SUBMIT | RATE_LIMIT_HIT
-  --      BOT_DETECTED | SUSPICIOUS_CONTENT | DUPLICATE_EMAIL
-  --      ADMIN_LOGIN  | ADMIN_SIGNOUT
   ip_address  TEXT,
   user_agent  TEXT,
   metadata    JSONB       NOT NULL DEFAULT '{}'::jsonb,
@@ -162,31 +186,47 @@ COMMENT ON COLUMN public.security_audit_logs.risk_level  IS 'LOW | MEDIUM | HIGH
 
 ALTER TABLE public.security_audit_logs ENABLE ROW LEVEL SECURITY;
 
--- Anyone (anon) may insert — needed for client-side logging
-CREATE POLICY "Public INSERT on security_audit_logs"
+-- ── INSERT policy ──────────────────────────────────────────────
+-- Allow public (anon) inserts so the client-side logger can write
+-- events without requiring authentication.
+CREATE POLICY "Allow system insert logs"
   ON public.security_audit_logs
   FOR INSERT
-  TO anon
   WITH CHECK (true);
 
--- Anon may SELECT — admin dashboard reads via passcode-gated page
-CREATE POLICY "Admin SELECT on security_audit_logs"
+-- ── SELECT policy ─────────────────────────────────────────────
+-- STRICT: only the Supabase service role OR an authenticated user
+-- with is_admin = true on their profiles row may read audit logs.
+-- Anonymous users (including the passcode-gated admin dashboard
+-- running under the anon key) cannot read this table directly.
+--
+-- To view logs from the dashboard you would need to:
+--   a) Use the Supabase Dashboard → Table Editor, or
+--   b) Upgrade the admin page to use Supabase Auth + service role.
+DROP POLICY IF EXISTS "Admin SELECT on security_audit_logs" ON public.security_audit_logs;
+
+CREATE POLICY "Admin only read audit logs"
   ON public.security_audit_logs
   FOR SELECT
-  TO anon
-  USING (true);
-
-GRANT USAGE  ON SCHEMA public TO anon;
-GRANT INSERT, SELECT ON public.security_audit_logs TO anon;
+  USING (
+    (auth.jwt() ->> 'role') = 'service_role'
+    OR EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND is_admin = true
+    )
+  );
 
 
 -- ─────────────────────────────────────────────────────────────
---  OPTIONAL: Grant usage to the anon role explicitly
---  (Supabase does this by default, but included for clarity)
+--  GRANT statements
+--  Supabase grants these by default; included for explicitness.
 -- ─────────────────────────────────────────────────────────────
-GRANT USAGE  ON SCHEMA public TO anon;
-GRANT INSERT          ON public.waitlist    TO anon;
-GRANT INSERT          ON public.suggestions TO anon;
-GRANT INSERT          ON public.enquiries   TO anon;
-GRANT SELECT          ON public.waitlist    TO anon;
-GRANT SELECT, UPDATE  ON public.suggestions TO anon;
+GRANT USAGE ON SCHEMA public TO anon;
+
+GRANT INSERT          ON public.waitlist              TO anon;
+GRANT INSERT          ON public.suggestions           TO anon;
+GRANT INSERT          ON public.enquiries             TO anon;
+GRANT SELECT          ON public.waitlist              TO anon;
+GRANT SELECT, UPDATE  ON public.suggestions           TO anon;
+GRANT INSERT          ON public.security_audit_logs   TO anon;
+-- No SELECT grant on security_audit_logs for anon — RLS enforces this.
