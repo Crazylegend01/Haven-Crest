@@ -173,10 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
             metadata:    { role: userRole, campus: campusName || null },
             risk_level:  'LOW',
           });
-          showToast('You\u2019re on the list! \uD83C\uDF89 We\u2019ll reach out when we launch.', 'success', 7000);
           waitlistForm.reset();
           const studentRadio = waitlistForm.querySelector('#role-student');
           if (studentRadio) studentRadio.checked = true;
+          openShareModal();
         }
       } catch (err) {
         console.error('[Haven & Crest] Waitlist error:', err);
@@ -307,3 +307,140 @@ function setButtonLoading(btn, loading, label) {
   btn.style.opacity = loading ? '0.72' : '';
   btn.style.cursor  = loading ? 'not-allowed' : '';
 }
+
+
+/* ================================================================
+   VIRAL SHARE MODAL
+   ================================================================ */
+const SITE_URL = 'https://havenandcrest.com/';
+
+function openShareModal() {
+  const modal    = document.getElementById('share-modal');
+  const overlay  = document.getElementById('share-modal-overlay');
+  const closeBtn = document.getElementById('share-modal-close');
+  const copyBtn  = document.getElementById('share-copy');
+  const copyLbl  = document.getElementById('share-copy-label');
+  const waBtn    = document.getElementById('share-whatsapp');
+
+  if (!modal) return;
+
+  // Show
+  modal.hidden = false;
+  document.body.style.overflow = 'hidden';
+
+  // Focus the close button for keyboard users
+  requestAnimationFrame(() => closeBtn?.focus());
+
+  // ── WhatsApp link (dynamic in case URL changes) ────────────
+  if (waBtn) {
+    const waText = encodeURIComponent(
+      'Tired of rental scams and fake house listings near campus? ' +
+      'Check out Haven & Crest — a safe platform for verified student housing. ' +
+      'Join the waitlist here: ' + SITE_URL
+    );
+    waBtn.href = 'https://api.whatsapp.com/send?text=' + waText;
+  }
+
+  // ── Copy invite link ───────────────────────────────────────
+  let copyTimer = null;
+  function handleCopy() {
+    navigator.clipboard.writeText(SITE_URL).then(() => {
+      if (copyLbl) copyLbl.textContent = 'Copied!';
+      copyBtn?.classList.add('is-copied');
+      clearTimeout(copyTimer);
+      copyTimer = setTimeout(() => {
+        if (copyLbl) copyLbl.textContent = 'Copy Invite Link';
+        copyBtn?.classList.remove('is-copied');
+      }, 2000);
+    }).catch(() => {
+      // Fallback for browsers that block clipboard without HTTPS
+      const ta = document.createElement('textarea');
+      ta.value = SITE_URL;
+      ta.style.position = 'fixed';
+      ta.style.opacity  = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (copyLbl) copyLbl.textContent = 'Copied!';
+      copyBtn?.classList.add('is-copied');
+      clearTimeout(copyTimer);
+      copyTimer = setTimeout(() => {
+        if (copyLbl) copyLbl.textContent = 'Copy Invite Link';
+        copyBtn?.classList.remove('is-copied');
+      }, 2000);
+    });
+  }
+
+  // ── Close helpers ──────────────────────────────────────────
+  function closeModal() {
+    modal.hidden = false; // keep visible during fade-out
+    const card = modal.querySelector('.share-modal__card');
+    const ovl  = modal.querySelector('.share-modal__overlay');
+
+    // Reverse animations
+    if (card) { card.style.animation = 'modalCardOut 0.22s var(--ease-out) both'; }
+    if (ovl)  { ovl.style.animation  = 'modalOverlayOut 0.22s ease both'; }
+
+    setTimeout(() => {
+      modal.hidden = true;
+      document.body.style.overflow = '';
+      // Reset animations for next open
+      if (card) card.style.animation = '';
+      if (ovl)  ovl.style.animation  = '';
+      // Clean up listeners
+      closeBtn?.removeEventListener('click', closeModal);
+      overlay?.removeEventListener('click', closeModal);
+      copyBtn?.removeEventListener('click', handleCopy);
+      document.removeEventListener('keydown', handleKey);
+      clearTimeout(copyTimer);
+    }, 230);
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Escape') closeModal();
+  }
+
+  // ── Trap focus inside modal ────────────────────────────────
+  function handleFocusTrap(e) {
+    if (!modal || modal.hidden) return;
+    const focusable = Array.from(
+      modal.querySelectorAll('a, button, [tabindex]:not([tabindex="-1"])')
+    ).filter(el => !el.disabled);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last  = focusable[focusable.length - 1];
+    if (e.key === 'Tab') {
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault(); last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault(); first.focus();
+      }
+    }
+  }
+
+  // ── Wire events ────────────────────────────────────────────
+  closeBtn?.addEventListener('click', closeModal);
+  overlay?.addEventListener('click', closeModal);
+  copyBtn?.addEventListener('click', handleCopy);
+  document.addEventListener('keydown', handleKey);
+  modal.addEventListener('keydown', handleFocusTrap);
+}
+
+// Inject close-animation keyframes once
+(function injectModalKeyframes() {
+  if (document.getElementById('hc-modal-keyframes')) return;
+  const style = document.createElement('style');
+  style.id = 'hc-modal-keyframes';
+  style.textContent = `
+    @keyframes modalCardOut {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to   { opacity: 0; transform: translateY(12px) scale(0.97); }
+    }
+    @keyframes modalOverlayOut {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
+  `;
+  document.head.appendChild(style);
+})();
