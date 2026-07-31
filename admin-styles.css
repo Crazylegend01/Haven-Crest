@@ -183,6 +183,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  padding-top: 64px; /* offset for fixed nav */
 }
 
 
@@ -190,10 +191,12 @@
    ADMIN TOPBAR
    ---------------------------------------------------------------- */
 .admin-nav {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
-  background-color: rgba(253, 251, 247, 0.95);
+  background-color: rgba(253, 251, 247, 0.97);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border-sand);

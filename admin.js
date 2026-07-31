@@ -179,8 +179,19 @@ async function loadDashboard() {
   } catch (err) {
     console.error('[Admin] Failed to load data:', err);
     loading.hidden = true;
-    document.getElementById('admin-error-msg').textContent =
-      err.message ?? 'Failed to reach Supabase. Check your RLS policies.';
+
+    // Build a helpful message from whatever the error object contains
+    const parts = [];
+    if (err?.code)    parts.push(`Code: ${err.code}`);
+    if (err?.message) parts.push(err.message);
+    if (err?.hint)    parts.push(`Hint: ${err.hint}`);
+    if (err?.details) parts.push(err.details);
+
+    const msg = parts.length
+      ? parts.join(' — ')
+      : (typeof err === 'string' ? err : 'Could not connect to Supabase. Check the browser console for details.');
+
+    document.getElementById('admin-error-msg').textContent = msg;
     error.hidden = false;
   }
 }
