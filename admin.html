@@ -355,7 +355,9 @@
     </div>
     <!-- /DASHBOARD SHELL -->
 
-    <!-- Admin script -->
-    <script type="module" src="admin.js?v=1"></script>
+    <!-- Supabase via CDN (no dynamic import needed) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <!-- Admin script (plain — not a module) -->
+    <script src="admin.js?v=2"></script>
   </body>
 </html>

@@ -12,22 +12,24 @@
 /* ================================================================
    CONFIGURATION  (edit these to customise)
    ================================================================ */
-const ADMIN_PASSCODE    = 'HavenCrest2027';      // ← change this
-const SESSION_KEY       = 'hc_admin_unlocked';
+var ADMIN_PASSCODE = 'HavenCrest2027';       // ← change this
+var SESSION_KEY    = 'hc_admin_unlocked';
 
-const SUPABASE_URL      = 'https://mszxguwxcpxvbpagtwdv.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zenhndXd4Y3B4dmJwYWd0d2R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzNTgyOTUsImV4cCI6MjEwMDkzNDI5NX0.0axpIOA369GUOKPqxBO5nfTqaXjI2EvVVB8wTViLB_o';
+var SUPABASE_URL      = 'https://mszxguwxcpxvbpagtwdv.supabase.co';
+var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zenhndXd4Y3B4dmJwYWd0d2R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzNTgyOTUsImV4cCI6MjEwMDkzNDI5NX0.0axpIOA369GUOKPqxBO5nfTqaXjI2EvVVB8wTViLB_o';
 
 
 /* ================================================================
-   SUPABASE CLIENT
+   SUPABASE CLIENT  (uses global loaded from CDN script tag)
    ================================================================ */
-let _sb = null;
+var _sb = null;
 
-async function getClient() {
+function getClient() {
   if (_sb) return _sb;
-  const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-  _sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  if (!window.supabase) {
+    throw new Error('Supabase CDN script did not load. Check your internet connection.');
+  }
+  _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   return _sb;
 }
 
@@ -35,132 +37,158 @@ async function getClient() {
 /* ================================================================
    STATE
    ================================================================ */
-let _waitlistData     = [];   // full dataset from Supabase
-let _suggestionsData  = [];   // full dataset from Supabase
-let _suggestionFilter = 'all'; // 'all' | 'pending' | 'reviewed'
+var _waitlistData    = [];
+var _suggestionsData = [];
+var _suggestionFilter = 'all';
 
 
 /* ================================================================
    DOM READY
    ================================================================ */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function () {
+
+  // Emergency sign-out via URL param: admin.html?signout
+  if (location.search.includes('signout')) {
+    sessionStorage.removeItem(SESSION_KEY);
+    history.replaceState(null, '', location.pathname);
+  }
+
+  var lockScreen = document.getElementById('lock-screen');
+  var adminShell = document.getElementById('admin-shell');
+  var lockForm   = document.getElementById('lock-form');
+  var lockInput  = document.getElementById('admin-passcode');
+  var lockError  = document.getElementById('lock-error');
+  var lockReveal = document.getElementById('lock-reveal-btn');
 
   /* ----------------------------------------------------------
-     LOCK SCREEN
+     SHOW / HIDE PASSCODE
   ---------------------------------------------------------- */
-  const lockScreen = document.getElementById('lock-screen');
-  const adminShell = document.getElementById('admin-shell');
-  const lockForm   = document.getElementById('lock-form');
-  const lockInput  = document.getElementById('admin-passcode');
-  const lockError  = document.getElementById('lock-error');
-  const lockSubmit = document.getElementById('lock-submit');
-  const lockReveal = document.getElementById('lock-reveal-btn');
-
-  // Show/hide passcode toggle
   if (lockReveal && lockInput) {
-    lockReveal.addEventListener('click', () => {
-      const isText = lockInput.type === 'text';
+    lockReveal.addEventListener('click', function () {
+      var isText = lockInput.type === 'text';
       lockInput.type = isText ? 'password' : 'text';
       lockReveal.setAttribute('aria-label', isText ? 'Show passcode' : 'Hide passcode');
       lockReveal.classList.toggle('is-revealed', !isText);
     });
   }
 
-  // Check sessionStorage — skip lock if already unlocked this session
+  /* ----------------------------------------------------------
+     SKIP LOCK IF ALREADY AUTHENTICATED THIS SESSION
+  ---------------------------------------------------------- */
   if (sessionStorage.getItem(SESSION_KEY) === 'true') {
-    showDashboard();
+    revealDashboard(lockScreen, adminShell);
     loadDashboard();
     return;
   }
 
-  // Passcode form submit
-  lockForm?.addEventListener('submit', e => {
-    e.preventDefault();
-    const entered = lockInput.value.trim();
+  /* ----------------------------------------------------------
+     PASSCODE FORM
+  ---------------------------------------------------------- */
+  if (lockForm) {
+    lockForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var entered = lockInput ? lockInput.value.trim() : '';
 
-    if (entered === ADMIN_PASSCODE) {
-      lockError.textContent = '';
-      lockInput.value = '';
-      sessionStorage.setItem(SESSION_KEY, 'true');
-      showDashboard();
-      loadDashboard();
-    } else {
-      lockError.textContent = 'Incorrect passcode. Please try again.';
-      lockInput.value = '';
-      lockInput.focus();
-      // Shake animation
-      lockForm.classList.add('lock-form--shake');
-      lockForm.addEventListener('animationend', () => {
-        lockForm.classList.remove('lock-form--shake');
-      }, { once: true });
-    }
-  });
-
-  function showDashboard() {
-    lockScreen.style.opacity = '0';
-    lockScreen.style.transition = 'opacity 0.35s ease';
-    setTimeout(() => {
-      lockScreen.hidden = true;
-      adminShell.hidden = false;
-      // Fade in
-      requestAnimationFrame(() => {
-        adminShell.style.opacity = '0';
-        adminShell.style.transition = 'opacity 0.4s ease';
-        requestAnimationFrame(() => { adminShell.style.opacity = '1'; });
-      });
-    }, 350);
+      if (entered === ADMIN_PASSCODE) {
+        lockError.textContent = '';
+        if (lockInput) lockInput.value = '';
+        sessionStorage.setItem(SESSION_KEY, 'true');
+        revealDashboard(lockScreen, adminShell);
+        loadDashboard();
+      } else {
+        lockError.textContent = 'Incorrect passcode. Please try again.';
+        if (lockInput) lockInput.value = '';
+        if (lockInput) lockInput.focus();
+        lockForm.classList.add('lock-form--shake');
+        lockForm.addEventListener('animationend', function () {
+          lockForm.classList.remove('lock-form--shake');
+        }, { once: true });
+      }
+    });
   }
 
   /* ----------------------------------------------------------
      SIGN OUT
   ---------------------------------------------------------- */
-  document.getElementById('admin-signout')?.addEventListener('click', () => {
-    sessionStorage.removeItem(SESSION_KEY);
-    window.location.reload();
-  });
+  var signoutBtn = document.getElementById('admin-signout');
+  if (signoutBtn) {
+    signoutBtn.addEventListener('click', function () {
+      sessionStorage.removeItem(SESSION_KEY);
+      window.location.reload();
+    });
+  }
 
   /* ----------------------------------------------------------
      REFRESH
   ---------------------------------------------------------- */
-  document.getElementById('admin-refresh')?.addEventListener('click', () => {
-    loadDashboard();
-  });
+  var refreshBtn = document.getElementById('admin-refresh');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', loadDashboard);
+  }
 
   /* ----------------------------------------------------------
      RETRY
   ---------------------------------------------------------- */
-  document.getElementById('admin-error-retry')?.addEventListener('click', () => {
-    loadDashboard();
-  });
+  var retryBtn = document.getElementById('admin-error-retry');
+  if (retryBtn) {
+    retryBtn.addEventListener('click', loadDashboard);
+  }
 
 });
 
 
 /* ================================================================
+   REVEAL DASHBOARD (fade transition)
+   ================================================================ */
+function revealDashboard(lockScreen, adminShell) {
+  lockScreen.style.opacity    = '0';
+  lockScreen.style.transition = 'opacity 0.3s ease';
+  setTimeout(function () {
+    lockScreen.hidden      = true;
+    adminShell.hidden      = false;
+    adminShell.style.opacity    = '0';
+    adminShell.style.transition = 'opacity 0.35s ease';
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        adminShell.style.opacity = '1';
+      });
+    });
+  }, 310);
+}
+
+
+/* ================================================================
    LOAD DASHBOARD DATA
    ================================================================ */
-async function loadDashboard() {
-  const loading = document.getElementById('admin-loading');
-  const error   = document.getElementById('admin-error');
-  const content = document.getElementById('admin-content');
+function loadDashboard() {
+  var loading = document.getElementById('admin-loading');
+  var errorEl = document.getElementById('admin-error');
+  var content = document.getElementById('admin-content');
 
-  loading.hidden = false;
-  error.hidden   = true;
-  content.hidden = true;
+  if (loading) loading.hidden = false;
+  if (errorEl) errorEl.hidden = true;
+  if (content) content.hidden = true;
 
+  var sb;
   try {
-    const sb = await getClient();
+    sb = getClient();
+  } catch (initErr) {
+    showError(initErr.message);
+    return;
+  }
 
-    const [waitlistRes, suggestionsRes] = await Promise.all([
-      sb.from('waitlist').select('*').order('created_at', { ascending: false }),
-      sb.from('suggestions').select('*').order('created_at', { ascending: false }),
-    ]);
+  Promise.all([
+    sb.from('waitlist').select('*').order('created_at', { ascending: false }),
+    sb.from('suggestions').select('*').order('created_at', { ascending: false }),
+  ]).then(function (results) {
+    var waitlistRes    = results[0];
+    var suggestionsRes = results[1];
 
-    if (waitlistRes.error)    throw waitlistRes.error;
-    if (suggestionsRes.error) throw suggestionsRes.error;
+    if (waitlistRes.error)    { showError(buildErrorMsg(waitlistRes.error));    return; }
+    if (suggestionsRes.error) { showError(buildErrorMsg(suggestionsRes.error)); return; }
 
-    _waitlistData    = waitlistRes.data    ?? [];
-    _suggestionsData = suggestionsRes.data ?? [];
+    _waitlistData    = waitlistRes.data    || [];
+    _suggestionsData = suggestionsRes.data || [];
 
     renderMetrics();
     renderWaitlistTable(_waitlistData);
@@ -170,30 +198,34 @@ async function loadDashboard() {
     wireSuggestionFilters();
     wireExportCSV();
 
-    document.getElementById('admin-last-updated').textContent =
-      'Updated ' + formatTime(new Date());
+    var lastUpdated = document.getElementById('admin-last-updated');
+    if (lastUpdated) lastUpdated.textContent = 'Updated ' + formatTime(new Date());
 
-    loading.hidden = true;
-    content.hidden = false;
+    if (loading) loading.hidden = true;
+    if (content) content.hidden = false;
 
-  } catch (err) {
-    console.error('[Admin] Failed to load data:', err);
-    loading.hidden = true;
+  }).catch(function (err) {
+    console.error('[Admin] Unexpected error:', err);
+    showError(err && err.message ? err.message : String(err));
+  });
+}
 
-    // Build a helpful message from whatever the error object contains
-    const parts = [];
-    if (err?.code)    parts.push(`Code: ${err.code}`);
-    if (err?.message) parts.push(err.message);
-    if (err?.hint)    parts.push(`Hint: ${err.hint}`);
-    if (err?.details) parts.push(err.details);
+function buildErrorMsg(err) {
+  var parts = [];
+  if (err.code)    parts.push('Code: ' + err.code);
+  if (err.message) parts.push(err.message);
+  if (err.hint)    parts.push('Hint: ' + err.hint);
+  return parts.length ? parts.join(' — ') : 'Unknown Supabase error. Check the browser console.';
+}
 
-    const msg = parts.length
-      ? parts.join(' — ')
-      : (typeof err === 'string' ? err : 'Could not connect to Supabase. Check the browser console for details.');
-
-    document.getElementById('admin-error-msg').textContent = msg;
-    error.hidden = false;
-  }
+function showError(msg) {
+  var loading = document.getElementById('admin-loading');
+  var errorEl = document.getElementById('admin-error');
+  var msgEl   = document.getElementById('admin-error-msg');
+  if (loading) loading.hidden = true;
+  if (msgEl)   msgEl.textContent = msg || 'Could not connect to Supabase.';
+  if (errorEl) errorEl.hidden = false;
+  console.error('[Admin]', msg);
 }
 
 
@@ -201,36 +233,35 @@ async function loadDashboard() {
    METRICS
    ================================================================ */
 function renderMetrics() {
-  const total     = _waitlistData.length;
-  const students  = _waitlistData.filter(r => r.user_role === 'student').length;
-  const landlords = _waitlistData.filter(r => r.user_role === 'landlord' || r.user_role === 'agent').length;
-  const suggs     = _suggestionsData.length;
+  var total     = _waitlistData.length;
+  var students  = _waitlistData.filter(function (r) { return r.user_role === 'student'; }).length;
+  var landlords = _waitlistData.filter(function (r) { return r.user_role === 'landlord' || r.user_role === 'agent'; }).length;
+  var suggs     = _suggestionsData.length;
 
   animateCount('metric-total-signups', total);
   animateCount('metric-students',      students);
   animateCount('metric-landlords',     landlords);
   animateCount('metric-suggestions',   suggs);
 
-  // Tab badge counts
-  setTabCount('tab-waitlist-count',     total);
-  setTabCount('tab-suggestions-count',  suggs);
+  setTabCount('tab-waitlist-count',    total);
+  setTabCount('tab-suggestions-count', suggs);
 }
 
 function setTabCount(id, n) {
-  const el = document.getElementById(id);
+  var el = document.getElementById(id);
   if (el) el.textContent = n > 0 ? String(n) : '';
 }
 
 function animateCount(id, target) {
-  const el = document.getElementById(id);
+  var el = document.getElementById(id);
   if (!el) return;
-  const duration = 900;
-  const start    = performance.now();
-  const from     = parseInt(el.textContent, 10) || 0;
+  var duration = 900;
+  var start    = performance.now();
+  var from     = parseInt(el.textContent, 10) || 0;
 
   function step(now) {
-    const t   = Math.min((now - start) / duration, 1);
-    const val = Math.round(from + (target - from) * easeOutExpo(t));
+    var t   = Math.min((now - start) / duration, 1);
+    var val = Math.round(from + (target - from) * easeOutExpo(t));
     el.textContent = val.toLocaleString();
     if (t < 1) requestAnimationFrame(step);
   }
@@ -246,43 +277,42 @@ function easeOutExpo(t) {
    WAITLIST TABLE
    ================================================================ */
 function renderWaitlistTable(rows) {
-  const tbody   = document.getElementById('waitlist-tbody');
-  const empty   = document.getElementById('waitlist-empty');
-  const rowCount = document.getElementById('waitlist-row-count');
+  var tbody    = document.getElementById('waitlist-tbody');
+  var empty    = document.getElementById('waitlist-empty');
+  var rowCount = document.getElementById('waitlist-row-count');
+  var wrap     = tbody ? tbody.closest('.admin-table-wrap') : null;
 
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   if (!rows.length) {
-    empty.hidden   = false;
-    tbody.closest('.admin-table-wrap').style.display = 'none';
-    rowCount.textContent = '';
+    if (empty) empty.hidden = false;
+    if (wrap)  wrap.style.display = 'none';
+    if (rowCount) rowCount.textContent = '';
     return;
   }
 
-  empty.hidden = true;
-  tbody.closest('.admin-table-wrap').style.display = '';
+  if (empty) empty.hidden = true;
+  if (wrap)  wrap.style.display = '';
 
-  rows.forEach((row, i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="admin-table__num">${i + 1}</td>
-      <td class="admin-table__name">${escHtml(row.full_name ?? '—')}</td>
-      <td class="admin-table__email">
-        <a href="mailto:${escHtml(row.email ?? '')}" class="admin-table__email-link">
-          ${escHtml(row.email ?? '—')}
-        </a>
-      </td>
-      <td><span class="role-badge role-badge--${escHtml(row.user_role ?? '')}">${capitalise(row.user_role ?? '—')}</span></td>
-      <td class="admin-table__campus">${escHtml(row.campus_name ?? '—')}</td>
-      <td class="admin-table__date">${formatDate(row.created_at)}</td>
-    `;
+  rows.forEach(function (row, i) {
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="admin-table__num">' + (i + 1) + '</td>' +
+      '<td class="admin-table__name">'  + escHtml(row.full_name  || '—') + '</td>' +
+      '<td class="admin-table__email"><a href="mailto:' + escHtml(row.email || '') + '" class="admin-table__email-link">' + escHtml(row.email || '—') + '</a></td>' +
+      '<td><span class="role-badge role-badge--' + escHtml(row.user_role || '') + '">' + capitalise(row.user_role || '—') + '</span></td>' +
+      '<td class="admin-table__campus">' + escHtml(row.campus_name || '—') + '</td>' +
+      '<td class="admin-table__date">'   + formatDate(row.created_at) + '</td>';
     tbody.appendChild(tr);
   });
 
-  const total = _waitlistData.length;
-  rowCount.textContent = rows.length < total
-    ? `Showing ${rows.length} of ${total} entries`
-    : `${total} ${total === 1 ? 'entry' : 'entries'} total`;
+  var total = _waitlistData.length;
+  if (rowCount) {
+    rowCount.textContent = rows.length < total
+      ? 'Showing ' + rows.length + ' of ' + total + ' entries'
+      : total + (total === 1 ? ' entry total' : ' entries total');
+  }
 }
 
 
@@ -290,25 +320,23 @@ function renderWaitlistTable(rows) {
    WAITLIST SEARCH
    ================================================================ */
 function wireWaitlistSearch() {
-  const input = document.getElementById('waitlist-search');
+  var input = document.getElementById('waitlist-search');
   if (!input) return;
 
-  // Remove old listener if re-wiring after refresh
-  const fresh = input.cloneNode(true);
+  // Clone to drop any previous listener
+  var fresh = input.cloneNode(true);
   input.parentNode.replaceChild(fresh, input);
 
-  fresh.addEventListener('input', () => {
-    const q = fresh.value.trim().toLowerCase();
-    if (!q) {
-      renderWaitlistTable(_waitlistData);
-      return;
-    }
-    const filtered = _waitlistData.filter(r =>
-      (r.full_name    ?? '').toLowerCase().includes(q) ||
-      (r.email        ?? '').toLowerCase().includes(q) ||
-      (r.campus_name  ?? '').toLowerCase().includes(q) ||
-      (r.user_role    ?? '').toLowerCase().includes(q)
-    );
+  fresh.addEventListener('input', function () {
+    var q = fresh.value.trim().toLowerCase();
+    if (!q) { renderWaitlistTable(_waitlistData); return; }
+
+    var filtered = _waitlistData.filter(function (r) {
+      return (r.full_name   || '').toLowerCase().includes(q) ||
+             (r.email       || '').toLowerCase().includes(q) ||
+             (r.campus_name || '').toLowerCase().includes(q) ||
+             (r.user_role   || '').toLowerCase().includes(q);
+    });
     renderWaitlistTable(filtered);
   });
 }
@@ -318,39 +346,34 @@ function wireWaitlistSearch() {
    EXPORT CSV
    ================================================================ */
 function wireExportCSV() {
-  const btn = document.getElementById('waitlist-export');
+  var btn = document.getElementById('waitlist-export');
   if (!btn) return;
 
-  const fresh = btn.cloneNode(true);
+  var fresh = btn.cloneNode(true);
   btn.parentNode.replaceChild(fresh, btn);
 
-  fresh.addEventListener('click', () => {
-    if (!_waitlistData.length) return;
-    exportWaitlistCSV(_waitlistData);
+  fresh.addEventListener('click', function () {
+    if (_waitlistData.length) exportWaitlistCSV(_waitlistData);
   });
 }
 
 function exportWaitlistCSV(data) {
-  const headers = ['#', 'Full Name', 'Email', 'Role', 'Campus', 'Signed Up'];
-  const rows = data.map((r, i) => [
-    i + 1,
-    r.full_name    ?? '',
-    r.email        ?? '',
-    r.user_role    ?? '',
-    r.campus_name  ?? '',
-    formatDate(r.created_at),
-  ]);
-
-  const csv = [headers, ...rows]
-    .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-    .join('\n');
-
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = Object.assign(document.createElement('a'), {
-    href:     url,
-    download: `haven-crest-waitlist-${datestamp()}.csv`,
+  var headers = ['#', 'Full Name', 'Email', 'Role', 'Campus', 'Signed Up'];
+  var rows = data.map(function (r, i) {
+    return [i + 1, r.full_name || '', r.email || '', r.user_role || '', r.campus_name || '', formatDate(r.created_at)];
   });
+
+  var csv = [headers].concat(rows).map(function (row) {
+    return row.map(function (cell) {
+      return '"' + String(cell).replace(/"/g, '""') + '"';
+    }).join(',');
+  }).join('\n');
+
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'haven-crest-waitlist-' + datestamp() + '.csv';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -362,63 +385,53 @@ function exportWaitlistCSV(data) {
    SUGGESTIONS GRID
    ================================================================ */
 function renderSuggestionsGrid(rows) {
-  const grid  = document.getElementById('suggestions-grid');
-  const empty = document.getElementById('suggestions-empty');
+  var grid  = document.getElementById('suggestions-grid');
+  var empty = document.getElementById('suggestions-empty');
+  if (!grid) return;
   grid.innerHTML = '';
 
-  const filtered = _suggestionFilter === 'all'
+  var filtered = _suggestionFilter === 'all'
     ? rows
-    : rows.filter(r => (r.status ?? 'pending') === _suggestionFilter);
+    : rows.filter(function (r) { return (r.status || 'pending') === _suggestionFilter; });
 
   if (!filtered.length) {
-    empty.hidden = false;
+    if (empty) empty.hidden = false;
     return;
   }
-  empty.hidden = true;
+  if (empty) empty.hidden = true;
 
-  filtered.forEach(row => {
-    const status   = row.status ?? 'pending';
-    const isReviewed = status === 'reviewed';
-    const card = document.createElement('div');
-    card.className = 'suggestion-item';
+  filtered.forEach(function (row) {
+    var status     = row.status || 'pending';
+    var isReviewed = status === 'reviewed';
+    var card = document.createElement('div');
+    card.className  = 'suggestion-item';
     card.dataset.id = row.id;
 
-    card.innerHTML = `
-      <div class="suggestion-item__header">
-        <div class="suggestion-item__meta">
-          <span class="suggestion-item__author">${escHtml(row.author_name ?? 'Anonymous')}</span>
-          <time class="suggestion-item__date">${formatDate(row.created_at)}</time>
-        </div>
-        <span class="category-badge category-badge--${slugify(row.category ?? 'other')}">
-          ${escHtml(row.category ?? 'Other')}
-        </span>
-      </div>
-      <p class="suggestion-item__text">${escHtml(row.suggestion_text ?? '')}</p>
-      <div class="suggestion-item__footer">
-        <span class="status-badge status-badge--${status}" id="status-label-${row.id}">
-          ${isReviewed ? 'Reviewed' : 'Pending'}
-        </span>
-        <button
-          class="admin-toggle-btn admin-toggle-btn--${isReviewed ? 'pending' : 'reviewed'}"
-          data-id="${row.id}"
-          data-status="${status}"
-          aria-label="${isReviewed ? 'Mark as pending' : 'Mark as reviewed'}"
-        >
-          ${isReviewed
-            ? `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M8 2v6M4 6l4 4 4-4"/>
-               </svg> Mark Pending`
-            : `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M3 8l4 4 6-6"/>
-               </svg> Mark Reviewed`
-          }
-        </button>
-      </div>
-    `;
+    card.innerHTML =
+      '<div class="suggestion-item__header">' +
+        '<div class="suggestion-item__meta">' +
+          '<span class="suggestion-item__author">' + escHtml(row.author_name || 'Anonymous') + '</span>' +
+          '<time class="suggestion-item__date">' + formatDate(row.created_at) + '</time>' +
+        '</div>' +
+        '<span class="category-badge category-badge--' + slugify(row.category || 'other') + '">' +
+          escHtml(row.category || 'Other') +
+        '</span>' +
+      '</div>' +
+      '<p class="suggestion-item__text">' + escHtml(row.suggestion_text || '') + '</p>' +
+      '<div class="suggestion-item__footer">' +
+        '<span class="status-badge status-badge--' + status + '" id="status-label-' + row.id + '">' +
+          (isReviewed ? 'Reviewed' : 'Pending') +
+        '</span>' +
+        '<button class="admin-toggle-btn admin-toggle-btn--' + (isReviewed ? 'pending' : 'reviewed') + '" ' +
+          'data-id="' + row.id + '" data-status="' + status + '" ' +
+          'aria-label="' + (isReviewed ? 'Mark as pending' : 'Mark as reviewed') + '">' +
+          (isReviewed
+            ? '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v6M4 6l4 4 4-4"/></svg> Mark Pending'
+            : '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8l4 4 6-6"/></svg> Mark Reviewed') +
+        '</button>' +
+      '</div>';
 
-    card.querySelector('.admin-toggle-btn').addEventListener('click', e => {
+    card.querySelector('.admin-toggle-btn').addEventListener('click', function (e) {
       handleStatusToggle(e.currentTarget, row);
     });
 
@@ -430,69 +443,59 @@ function renderSuggestionsGrid(rows) {
 /* ================================================================
    SUGGESTION STATUS TOGGLE
    ================================================================ */
-async function handleStatusToggle(btn, row) {
+function handleStatusToggle(btn, row) {
   if (btn.disabled) return;
   btn.disabled = true;
 
-  const currentStatus = btn.dataset.status;
-  const newStatus     = currentStatus === 'reviewed' ? 'pending' : 'reviewed';
+  var currentStatus = btn.dataset.status;
+  var newStatus     = currentStatus === 'reviewed' ? 'pending' : 'reviewed';
 
-  // Optimistic UI update
+  // Optimistic update
   updateSuggestionCard(row.id, newStatus);
-  // Update local state
-  const idx = _suggestionsData.findIndex(r => r.id === row.id);
+  var idx = _suggestionsData.findIndex(function (r) { return r.id === row.id; });
   if (idx !== -1) _suggestionsData[idx].status = newStatus;
 
-  try {
-    const sb = await getClient();
-    const { error } = await sb
-      .from('suggestions')
-      .update({ status: newStatus })
-      .eq('id', row.id);
+  var sb;
+  try { sb = getClient(); } catch (e) { btn.disabled = false; return; }
 
-    if (error) {
-      // Revert on failure
+  sb.from('suggestions')
+    .update({ status: newStatus })
+    .eq('id', row.id)
+    .then(function (res) {
+      if (res.error) {
+        // Revert
+        updateSuggestionCard(row.id, currentStatus);
+        if (idx !== -1) _suggestionsData[idx].status = currentStatus;
+        console.error('[Admin] Status update failed:', res.error.message);
+      } else {
+        renderMetrics();
+      }
+    })
+    .catch(function () {
       updateSuggestionCard(row.id, currentStatus);
       if (idx !== -1) _suggestionsData[idx].status = currentStatus;
-      console.error('[Admin] Status update failed:', error.message);
-    } else {
-      // Re-render metrics
-      renderMetrics();
-    }
-  } catch (err) {
-    updateSuggestionCard(row.id, currentStatus);
-    if (idx !== -1) _suggestionsData[idx].status = currentStatus;
-    console.error('[Admin] Status update error:', err);
-  }
+    });
 }
 
 function updateSuggestionCard(id, newStatus) {
-  const card = document.querySelector(`.suggestion-item[data-id="${id}"]`);
+  var card       = document.querySelector('.suggestion-item[data-id="' + id + '"]');
   if (!card) return;
-
-  const label = card.querySelector(`#status-label-${id}`);
-  const btn   = card.querySelector('.admin-toggle-btn');
-  const isReviewed = newStatus === 'reviewed';
+  var label      = document.getElementById('status-label-' + id);
+  var btn        = card.querySelector('.admin-toggle-btn');
+  var isReviewed = newStatus === 'reviewed';
 
   if (label) {
     label.textContent = isReviewed ? 'Reviewed' : 'Pending';
-    label.className   = `status-badge status-badge--${newStatus}`;
+    label.className   = 'status-badge status-badge--' + newStatus;
   }
-
   if (btn) {
     btn.dataset.status = newStatus;
-    btn.className = `admin-toggle-btn admin-toggle-btn--${isReviewed ? 'pending' : 'reviewed'}`;
+    btn.className      = 'admin-toggle-btn admin-toggle-btn--' + (isReviewed ? 'pending' : 'reviewed');
     btn.setAttribute('aria-label', isReviewed ? 'Mark as pending' : 'Mark as reviewed');
-    btn.disabled = false;
+    btn.disabled  = false;
     btn.innerHTML = isReviewed
-      ? `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M8 2v6M4 6l4 4 4-4"/>
-         </svg> Mark Pending`
-      : `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 8l4 4 6-6"/>
-         </svg> Mark Reviewed`;
+      ? '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v6M4 6l4 4 4-4"/></svg> Mark Pending'
+      : '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8l4 4 6-6"/></svg> Mark Reviewed';
   }
 }
 
@@ -501,15 +504,15 @@ function updateSuggestionCard(id, newStatus) {
    SUGGESTION FILTERS
    ================================================================ */
 function wireSuggestionFilters() {
-  const btns = document.querySelectorAll('.admin-filter-btn');
-  btns.forEach(btn => {
-    const fresh = btn.cloneNode(true);
+  var btns = document.querySelectorAll('.admin-filter-btn');
+  btns.forEach(function (btn) {
+    var fresh = btn.cloneNode(true);
     btn.parentNode.replaceChild(fresh, btn);
-    fresh.addEventListener('click', () => {
-      _suggestionFilter = fresh.dataset.filter ?? 'all';
-      document.querySelectorAll('.admin-filter-btn').forEach(b =>
-        b.classList.toggle('admin-filter-btn--active', b.dataset.filter === _suggestionFilter)
-      );
+    fresh.addEventListener('click', function () {
+      _suggestionFilter = fresh.dataset.filter || 'all';
+      document.querySelectorAll('.admin-filter-btn').forEach(function (b) {
+        b.classList.toggle('admin-filter-btn--active', b.dataset.filter === _suggestionFilter);
+      });
       renderSuggestionsGrid(_suggestionsData);
     });
   });
@@ -520,29 +523,24 @@ function wireSuggestionFilters() {
    TAB BAR
    ================================================================ */
 function wireTabBar() {
-  const tabs = document.querySelectorAll('.admin-tab');
-  tabs.forEach(tab => {
-    const fresh = tab.cloneNode(true);
+  var tabs = document.querySelectorAll('.admin-tab');
+  tabs.forEach(function (tab) {
+    var fresh = tab.cloneNode(true);
     tab.parentNode.replaceChild(fresh, tab);
-    fresh.addEventListener('click', () => switchTab(fresh.id));
+    fresh.addEventListener('click', function () { switchTab(fresh.id); });
   });
 }
 
 function switchTab(tabId) {
-  const tabs   = document.querySelectorAll('.admin-tab');
-  const panels = document.querySelectorAll('.admin-panel');
-
-  tabs.forEach(t => {
-    const isActive = t.id === tabId;
-    t.classList.toggle('admin-tab--active', isActive);
-    t.setAttribute('aria-selected', String(isActive));
+  document.querySelectorAll('.admin-tab').forEach(function (t) {
+    var active = t.id === tabId;
+    t.classList.toggle('admin-tab--active', active);
+    t.setAttribute('aria-selected', String(active));
   });
-
-  panels.forEach(p => {
-    const panelId = tabId.replace('tab-', 'panel-');
-    const isActive = p.id === panelId;
-    p.hidden = !isActive;
-    p.classList.toggle('admin-panel--hidden', !isActive);
+  document.querySelectorAll('.admin-panel').forEach(function (p) {
+    var active = p.id === tabId.replace('tab-', 'panel-');
+    p.hidden = !active;
+    p.classList.toggle('admin-panel--hidden', !active);
   });
 }
 
@@ -572,26 +570,23 @@ function formatDate(iso) {
   if (!iso) return '—';
   try {
     return new Intl.DateTimeFormat('en-GB', {
-      day:   '2-digit',
-      month: 'short',
-      year:  'numeric',
-      hour:  '2-digit',
-      minute:'2-digit',
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
     }).format(new Date(iso));
-  } catch { return iso; }
+  } catch (e) { return iso; }
 }
 
 function formatTime(date) {
   try {
     return new Intl.DateTimeFormat('en-GB', {
-      hour:   '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
     }).format(date);
-  } catch { return ''; }
+  } catch (e) { return ''; }
 }
 
 function datestamp() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  var d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
 }
