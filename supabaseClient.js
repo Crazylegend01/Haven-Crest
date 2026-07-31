@@ -1,7 +1,8 @@
 /**
  * supabaseClient.js — Haven & Crest
  *
- * Supabase backend client, helper utilities, and Toast notification system.
+ * Supabase backend client, helper utilities, Toast notification system,
+ * and Security / Fraud-detection layer.
  */
 
 /* ================================================================
@@ -16,14 +17,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
    ================================================================ */
 let _client = null;
 
-/**
- * Returns an initialised Supabase client, or null if credentials
- * are not yet set. Safe to call from multiple places.
- */
 async function getClient() {
   if (_client) return _client;
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
-
   try {
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
     _client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -36,75 +32,28 @@ async function getClient() {
 
 
 /* ================================================================
-   HELPER UTILITIES
+   FORM SUBMISSIONS
    ================================================================ */
 
-/**
- * Submit a waitlist entry.
- *
- * @param {{
- *   full_name:    string,
- *   email:        string,
- *   user_role:    'student' | 'landlord' | 'agent',
- *   campus_name?: string
- * }} data
- * @returns {Promise<{ success: boolean, error?: string }>}
- */
 export async function submitWaitlist(data) {
   const sb = await getClient();
-
-  if (!sb) {
-    console.log('[Haven & Crest] submitWaitlist (offline):', data);
-    await _delay(600);
-    return { success: true };
-  }
-
+  if (!sb) { await _delay(600); return { success: true }; }
   const { error } = await sb.from('waitlist').insert([data]);
   if (error) return { success: false, error: error.message };
   return { success: true };
 }
 
-
-/**
- * Submit a suggestion.
- *
- * @param {{
- *   author_name?:    string,
- *   category:        string,
- *   suggestion_text: string
- * }} data
- * @returns {Promise<{ success: boolean, error?: string }>}
- */
 export async function submitSuggestion(data) {
   const sb = await getClient();
-
-  if (!sb) {
-    console.log('[Haven & Crest] submitSuggestion (offline):', data);
-    await _delay(600);
-    return { success: true };
-  }
-
+  if (!sb) { await _delay(600); return { success: true }; }
   const { error } = await sb.from('suggestions').insert([data]);
   if (error) return { success: false, error: error.message };
   return { success: true };
 }
 
-
-/**
- * Submit a general enquiry (contact form).
- *
- * @param {{ name: string, email: string, message: string }} data
- * @returns {Promise<{ success: boolean, error?: string }>}
- */
 export async function submitEnquiry(data) {
   const sb = await getClient();
-
-  if (!sb) {
-    console.log('[Haven & Crest] submitEnquiry (offline):', data);
-    await _delay(800);
-    return { success: true };
-  }
-
+  if (!sb) { await _delay(800); return { success: true }; }
   const { error } = await sb.from('enquiries').insert([data]);
   if (error) return { success: false, error: error.message };
   return { success: true };
@@ -112,9 +61,238 @@ export async function submitEnquiry(data) {
 
 
 /* ================================================================
-   TOAST NOTIFICATION SYSTEM
+   ── SECURITY LAYER ──────────────────────────────────────────────
    ================================================================ */
 
+
+/* ----------------------------------------------------------------
+   1. INPUT SANITIZATION
+   ---------------------------------------------------------------- */
+
+/**
+ * Strip HTML / script content and enforce a maximum length.
+ * Use on every free-text field before sending to Supabase.
+ */
+export function sanitizeText(str, maxLen = 2000) {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .replace(/<[^>]*>/g, '')            // strip HTML tags
+    .replace(/javascript\s*:/gi, '')    // strip JS URI scheme
+    .replace(/on\w+\s*=\s*["'`]/gi, '') // strip inline event attrs
+    .replace(/&lt;/gi, '<')             // normalise encoded entities
+    .replace(/&gt;/gi, '>')             //   so the checks below still catch them
+    .replace(/<[^>]*>/g, '')            // second pass after entity decode
+    .trim()
+    .slice(0, maxLen);
+}
+
+/**
+ * Normalise and validate an email address.
+ * Returns the cleaned email or an empty string if invalid.
+ */
+export function sanitizeEmail(email) {
+  if (!email || typeof email !== 'string') return '';
+  const cleaned = email.trim().toLowerCase().slice(0, 255);
+  // RFC-5322–ish check
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cleaned) ? cleaned : '';
+}
+
+/**
+ * Sanitize a full name — letters, spaces, hyphens, apostrophes only.
+ */
+export function sanitizeName(name, maxLen = 100) {
+  if (!name || typeof name !== 'string') return '';
+  return name
+    .replace(/<[^>]*>/g, '')
+    .replace(/[^\p{L}\p{M}\s'\-\.]/gu, '') // allow unicode letters + common name chars
+    .trim()
+    .slice(0, maxLen);
+}
+
+
+/* ----------------------------------------------------------------
+   2. SUSPICIOUS CONTENT DETECTION
+   ---------------------------------------------------------------- */
+
+const SCAM_KEYWORDS = [
+  'wire transfer', 'western union', 'moneygram', 'advance fee',
+  'send money', 'bank details', 'nigerian prince', 'lottery winner',
+  'inheritance funds', 'bitcoin payment', 'crypto payment',
+  'whatsapp only', 'telegram only', 'no viewing',
+];
+
+/**
+ * Analyse text for spam / scam signals.
+ * @param {string} text
+ * @returns {{ suspicious: boolean, flags: string[], riskLevel: string }}
+ */
+export function detectSuspiciousContent(text) {
+  if (!text) return { suspicious: false, flags: [], riskLevel: 'LOW' };
+
+  const flags  = [];
+  const lower  = text.toLowerCase();
+  const letters = text.replace(/[^a-zA-Z]/g, '');
+
+  // Embedded URLs
+  if (/https?:\/\/|www\./i.test(text))          flags.push('contains_url');
+
+  // Repeated characters (e.g. "aaaaaaaaaa")
+  if (/(.)\1{9,}/.test(text))                   flags.push('repeated_chars');
+
+  // ALL CAPS blocks (shouting spam)
+  if (letters.length > 20 && letters === letters.toUpperCase())
+                                                  flags.push('all_caps');
+
+  // Scam keyword hits
+  for (const kw of SCAM_KEYWORDS) {
+    if (lower.includes(kw)) flags.push('scam_keyword:' + kw);
+  }
+
+  // Phone numbers embedded in text
+  if (/\+?\d[\d\s\-().]{7,}\d/.test(text))      flags.push('phone_number');
+
+  const hasScam = flags.some(f => f.startsWith('scam_keyword'));
+  const riskLevel = hasScam             ? 'HIGH'
+                  : flags.length >= 2   ? 'MEDIUM'
+                  : flags.length === 1  ? 'LOW'
+                  : 'LOW';
+
+  return { suspicious: flags.length > 0, flags, riskLevel };
+}
+
+
+/* ----------------------------------------------------------------
+   3. HONEYPOT DETECTION
+   ---------------------------------------------------------------- */
+
+/**
+ * Returns true if a bot-only hidden field has been filled.
+ * Bots auto-complete all visible inputs; humans never touch these.
+ * @param {HTMLFormElement} form
+ * @param {string[]}        fieldNames  Names of honeypot inputs
+ */
+export function isBotDetected(form, fieldNames = ['hc_website', 'hc_url']) {
+  for (const name of fieldNames) {
+    const el = form.querySelector(`[name="${name}"]`);
+    if (el && el.value.trim() !== '') return true;
+  }
+  return false;
+}
+
+
+/* ----------------------------------------------------------------
+   4. CLIENT-SIDE RATE LIMITING
+   ---------------------------------------------------------------- */
+
+/**
+ * Sliding-window rate limiter backed by localStorage.
+ *
+ * @param {string} action        Unique key, e.g. 'waitlist_submit'
+ * @param {number} maxAttempts   Max allowed calls within the window
+ * @param {number} windowMs      Window size in milliseconds
+ * @returns {{ allowed: boolean, remaining: number, retryAfterMs: number }}
+ */
+export function checkRateLimit(action, maxAttempts = 3, windowMs = 24 * 60 * 60 * 1000) {
+  const key = 'hc_rl_' + action;
+  const now = Date.now();
+  let timestamps = [];
+
+  try {
+    timestamps = JSON.parse(localStorage.getItem(key) || '[]');
+  } catch { timestamps = []; }
+
+  // Prune entries outside the window
+  timestamps = timestamps.filter(t => now - t < windowMs);
+
+  if (timestamps.length >= maxAttempts) {
+    const oldest      = Math.min(...timestamps);
+    const retryAfterMs = (oldest + windowMs) - now;
+    return { allowed: false, remaining: 0, retryAfterMs };
+  }
+
+  timestamps.push(now);
+  try { localStorage.setItem(key, JSON.stringify(timestamps)); } catch {}
+
+  return { allowed: true, remaining: maxAttempts - timestamps.length, retryAfterMs: 0 };
+}
+
+/**
+ * Human-readable countdown, e.g. "23 hrs 12 min".
+ */
+export function formatRetryAfter(ms) {
+  const hrs  = Math.floor(ms / 3_600_000);
+  const mins = Math.floor((ms % 3_600_000) / 60_000);
+  if (hrs > 0)  return `${hrs} hr${hrs > 1 ? 's' : ''} ${mins} min`;
+  if (mins > 0) return `${mins} min`;
+  return 'a moment';
+}
+
+
+/* ----------------------------------------------------------------
+   5. IP ADDRESS FETCHING  (best-effort, never blocks submission)
+   ---------------------------------------------------------------- */
+let _cachedIP = null;
+
+async function _fetchClientIP() {
+  if (_cachedIP !== null) return _cachedIP;
+  try {
+    const controller = new AbortController();
+    const timer      = setTimeout(() => controller.abort(), 3000);
+    const res  = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+    clearTimeout(timer);
+    const data = await res.json();
+    _cachedIP  = data.ip || null;
+  } catch {
+    _cachedIP = null;
+  }
+  return _cachedIP;
+}
+
+
+/* ----------------------------------------------------------------
+   6. SECURITY AUDIT LOGGING
+   ---------------------------------------------------------------- */
+
+/**
+ * Insert a security event into public.security_audit_logs.
+ * Fire-and-forget — never throws, never blocks the calling code.
+ *
+ * @param {{
+ *   action_type: string,
+ *   metadata?:   object,
+ *   risk_level?: 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL'
+ * }} opts
+ */
+export async function logSecurityEvent({ action_type, metadata = {}, risk_level = 'LOW' }) {
+  try {
+    const sb = await getClient();
+    if (!sb) return;
+
+    const ip_address = await _fetchClientIP();
+    const payload = {
+      action_type,
+      ip_address,
+      user_agent:  navigator.userAgent,
+      metadata:    {
+        ...metadata,
+        page:      location.pathname,
+        referrer:  document.referrer || null,
+        timestamp: new Date().toISOString(),
+      },
+      risk_level,
+    };
+
+    await sb.from('security_audit_logs').insert([payload]);
+  } catch (err) {
+    // Logging must never disrupt UX
+    console.warn('[Security] Could not log event:', err.message);
+  }
+}
+
+
+/* ================================================================
+   TOAST NOTIFICATION SYSTEM
+   ================================================================ */
 let _toastRoot = null;
 
 function _getToastRoot() {
@@ -143,13 +321,6 @@ const _toastIcons = {
             </svg>`,
 };
 
-/**
- * Display a toast notification that slides in from the top-right.
- *
- * @param {string}                          message
- * @param {'success' | 'error' | 'info'}   [type='info']
- * @param {number}                          [duration=4500]
- */
 export function showToast(message, type = 'info', duration = 4500) {
   const root  = _getToastRoot();
   const icon  = _toastIcons[type] || _toastIcons.info;
@@ -170,7 +341,6 @@ export function showToast(message, type = 'info', duration = 4500) {
   `;
 
   root.appendChild(toast);
-
   requestAnimationFrame(() => {
     requestAnimationFrame(() => toast.classList.add('hc-toast--visible'));
   });
@@ -181,7 +351,6 @@ export function showToast(message, type = 'info', duration = 4500) {
   };
 
   const timer = setTimeout(dismiss, duration);
-
   toast.querySelector('.hc-toast__close').addEventListener('click', () => {
     clearTimeout(timer);
     dismiss();
@@ -194,8 +363,4 @@ export function showToast(message, type = 'info', duration = 4500) {
    ================================================================ */
 const _delay = ms => new Promise(r => setTimeout(r, ms));
 
-
-/* ================================================================
-   INIT LOG
-   ================================================================ */
 console.info('[Haven & Crest] Supabase credentials loaded. Client will initialise on first request.');

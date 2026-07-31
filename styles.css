@@ -1026,3 +1026,21 @@ p  { color: var(--text-muted); line-height: 1.75; }
     transform: translateY(0);
   }
 }
+
+
+/* ----------------------------------------------------------------
+   HONEYPOT FIELDS
+   Visually hidden from real users but reachable by bots.
+   Must NOT use display:none or visibility:hidden — bots detect those.
+   ---------------------------------------------------------------- */
+.hc-honeypot {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  tabindex: -1;
+}

@@ -128,11 +128,56 @@ CREATE POLICY "Admin UPDATE status on suggestions"
 
 -- ─────────────────────────────────────────────────────────────
 --  MIGRATION: add status column if table already exists
---  (Safe to run even if column was already created by the
---  CREATE TABLE statement above.)
 -- ─────────────────────────────────────────────────────────────
 ALTER TABLE public.suggestions
   ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending';
+
+
+-- =============================================================
+--  SECURITY AUDIT & FRAUD LOG
+--  Records metadata for flagged or sensitive actions.
+--  IP addresses are captured client-side and stored for
+--  fraud investigation.
+-- =============================================================
+
+CREATE TABLE IF NOT EXISTS public.security_audit_logs (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at  TIMESTAMPTZ NOT NULL    DEFAULT now(),
+  user_id     UUID        REFERENCES auth.users(id) ON DELETE SET NULL,
+  action_type TEXT        NOT NULL,
+  -- e.g. WAITLIST_SUBMIT | SUGGESTION_SUBMIT | RATE_LIMIT_HIT
+  --      BOT_DETECTED | SUSPICIOUS_CONTENT | DUPLICATE_EMAIL
+  --      ADMIN_LOGIN  | ADMIN_SIGNOUT
+  ip_address  TEXT,
+  user_agent  TEXT,
+  metadata    JSONB       NOT NULL DEFAULT '{}'::jsonb,
+  risk_level  TEXT        NOT NULL DEFAULT 'LOW'
+    CHECK (risk_level IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL'))
+);
+
+COMMENT ON TABLE  public.security_audit_logs IS 'Fraud detection and security event log.';
+COMMENT ON COLUMN public.security_audit_logs.action_type IS 'Enumerated event type string.';
+COMMENT ON COLUMN public.security_audit_logs.metadata    IS 'Arbitrary JSON context for the event.';
+COMMENT ON COLUMN public.security_audit_logs.risk_level  IS 'LOW | MEDIUM | HIGH | CRITICAL';
+
+ALTER TABLE public.security_audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- Anyone (anon) may insert — needed for client-side logging
+CREATE POLICY "Public INSERT on security_audit_logs"
+  ON public.security_audit_logs
+  FOR INSERT
+  TO anon
+  WITH CHECK (true);
+
+-- Anon may SELECT — admin dashboard reads via passcode-gated page
+CREATE POLICY "Admin SELECT on security_audit_logs"
+  ON public.security_audit_logs
+  FOR SELECT
+  TO anon
+  USING (true);
+
+GRANT USAGE  ON SCHEMA public TO anon;
+GRANT INSERT, SELECT ON public.security_audit_logs TO anon;
 
 
 -- ─────────────────────────────────────────────────────────────

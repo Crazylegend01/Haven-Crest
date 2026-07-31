@@ -188,6 +188,13 @@
           <div class="waitlist-card" data-animate="fade-up" style="--delay:0.1s">
             <form class="waitlist-form" id="waitlist-form" novalidate aria-label="Waitlist signup form">
 
+              <!-- Honeypot: invisible to humans, bots auto-fill it -->
+              <div class="hc-honeypot" aria-hidden="true" tabindex="-1">
+                <label for="hc_website">Leave this blank</label>
+                <input type="text" id="hc_website" name="hc_website"
+                  tabindex="-1" autocomplete="off" />
+              </div>
+
               <div class="waitlist-form__row">
                 <div class="form-group">
                   <label class="form-label" for="wl-name">Full Name</label>
@@ -279,6 +286,13 @@
           <div class="suggestion-card" data-animate="fade-up" style="--delay:0.1s">
             <form class="suggestion-form" id="suggestion-form" novalidate aria-label="Community suggestions form">
 
+              <!-- Honeypot: invisible to humans, bots auto-fill it -->
+              <div class="hc-honeypot" aria-hidden="true" tabindex="-1">
+                <label for="hc_url">Leave this blank</label>
+                <input type="text" id="hc_url" name="hc_url"
+                  tabindex="-1" autocomplete="off" />
+              </div>
+
               <div class="form-group">
                 <label class="form-label" for="sg-name">Your Name <span class="form-label--optional">(Optional)</span></label>
                 <input class="form-input" type="text" id="sg-name" name="author_name"
@@ -338,9 +352,9 @@
     </div>
     <!-- /APP -->
 
-    <!-- Scripts — ?v=3 busts browser/CDN cache after credential update -->
+    <!-- Scripts — ?v=4 busts cache after security hardening update -->
     <script type="module" src="animations.js?v=3"></script>
-    <script type="module" src="main.js?v=3"></script>
+    <script type="module" src="main.js?v=4"></script>
 
   </body>
 </html>
