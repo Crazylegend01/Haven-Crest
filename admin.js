@@ -12,7 +12,7 @@
 /* ================================================================
    CONFIGURATION  (edit these to customise)
    ================================================================ */
-const ADMIN_PASSCODE    = 'HavenCrest2025';      // ← change this
+const ADMIN_PASSCODE    = 'HavenCrest2027';      // ← change this
 const SESSION_KEY       = 'hc_admin_unlocked';
 
 const SUPABASE_URL      = 'https://mszxguwxcpxvbpagtwdv.supabase.co';
