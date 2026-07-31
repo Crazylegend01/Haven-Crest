@@ -245,7 +245,89 @@
               <div class="form-group">
                 <label class="form-label" for="wl-campus">University / Campus Name</label>
                 <input class="form-input" type="text" id="wl-campus" name="campus_name"
-                  placeholder="e.g. University of Manchester" autocomplete="organization" />
+                  placeholder="e.g. University of Manchester" autocomplete="organization"
+                  list="campus-list" />
+                <datalist id="campus-list">
+                  <!-- ── UK Universities ── -->
+                  <option value="University of Manchester">
+                  <option value="University College London (UCL)">
+                  <option value="King's College London">
+                  <option value="University of Birmingham">
+                  <option value="University of Leeds">
+                  <option value="University of Sheffield">
+                  <option value="University of Bristol">
+                  <option value="University of Edinburgh">
+                  <option value="University of Nottingham">
+                  <option value="University of Liverpool">
+                  <option value="University of Warwick">
+                  <option value="University of Glasgow">
+                  <option value="Newcastle University">
+                  <option value="University of Southampton">
+                  <option value="Cardiff University">
+                  <option value="University of Exeter">
+                  <option value="Queen Mary University of London">
+                  <option value="University of Bath">
+                  <option value="Durham University">
+                  <option value="University of York">
+                  <option value="Loughborough University">
+                  <option value="University of Reading">
+                  <option value="Aston University">
+                  <option value="Brunel University London">
+                  <option value="University of East Anglia (UEA)">
+                  <option value="University of Leicester">
+                  <option value="Coventry University">
+                  <option value="Oxford Brookes University">
+                  <option value="De Montfort University">
+                  <option value="University of Hertfordshire">
+                  <option value="University of Kent">
+                  <option value="University of Surrey">
+                  <option value="University of Sussex">
+                  <option value="University of Essex">
+                  <option value="University of Plymouth">
+                  <option value="Keele University">
+                  <option value="Swansea University">
+                  <option value="Bangor University">
+                  <option value="Queen's University Belfast">
+                  <option value="University of Aberdeen">
+                  <option value="University of Strathclyde">
+                  <option value="Heriot-Watt University">
+                  <option value="University of Dundee">
+                  <option value="University of Stirling">
+                  <option value="Northumbria University">
+                  <option value="Sheffield Hallam University">
+                  <option value="Manchester Metropolitan University">
+                  <option value="Leeds Beckett University">
+                  <option value="Birmingham City University">
+                  <option value="London South Bank University">
+                  <option value="University of the Arts London">
+                  <option value="Goldsmiths, University of London">
+                  <option value="Royal Holloway, University of London">
+                  <option value="Middlesex University">
+                  <option value="University of Westminster">
+                  <option value="London Metropolitan University">
+                  <option value="University of Greenwich">
+                  <option value="University of Salford">
+                  <option value="University of Huddersfield">
+                  <option value="University of Lincoln">
+                  <option value="University of Derby">
+                  <option value="University of Northampton">
+                  <option value="Anglia Ruskin University">
+                  <option value="University of Bedfordshire">
+                  <option value="University of Portsmouth">
+                  <option value="Bournemouth University">
+                  <option value="University of the West of England (UWE)">
+                  <option value="University of Chester">
+                  <option value="Edge Hill University">
+                  <option value="University of Central Lancashire (UCLan)">
+                  <!-- ── International ── -->
+                  <option value="University of Toronto">
+                  <option value="McGill University">
+                  <option value="University of Melbourne">
+                  <option value="University of Sydney">
+                  <option value="University of Auckland">
+                  <option value="University of Dublin (Trinity College)">
+                  <option value="University College Dublin">
+                </datalist>
               </div>
 
               <button class="btn btn--primary waitlist-form__submit" type="submit" id="waitlist-submit">
@@ -357,6 +439,22 @@
 
     </div>
     <!-- /APP -->
+
+    <!-- ============================================================
+         STICKY MOBILE CTA BAR
+         Shown on small screens when the waitlist form is off-screen.
+    ============================================================ -->
+    <div class="sticky-cta" id="sticky-cta" aria-hidden="true">
+      <button class="sticky-cta__btn" id="sticky-cta-btn" aria-label="Jump to waitlist form">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M13 6H5M13 10H5M9 14H5"/>
+          <rect x="1" y="2" width="18" height="16" rx="2"/>
+        </svg>
+        Join the Waitlist
+      </button>
+    </div>
+    <!-- /STICKY MOBILE CTA BAR -->
 
     <!-- ============================================================
          VIRAL SHARE MODAL

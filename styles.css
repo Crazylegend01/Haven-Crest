@@ -327,6 +327,7 @@ p  { color: var(--text-muted); line-height: 1.75; }
   justify-content: center;
   gap: 0.5rem;
   padding: 0.75rem 1.75rem;
+  min-height: 48px; /* WCAG 2.5.5 touch target */
   border-radius: 40px;
   font-weight: 600;
   font-size: 0.9rem;
@@ -540,6 +541,7 @@ p  { color: var(--text-muted); line-height: 1.75; }
 .form-input {
   width: 100%;
   padding: 0.75rem 1rem;
+  min-height: 48px; /* WCAG 2.5.5 touch target */
   border: 1px solid var(--border-sand);
   border-radius: var(--radius-md);
   background-color: var(--bg-cream-surface);
@@ -548,6 +550,10 @@ p  { color: var(--text-muted); line-height: 1.75; }
   transition: border-color var(--transition), box-shadow var(--transition);
   appearance: none;
   -webkit-appearance: none;
+}
+/* Textarea doesn't need the 48px minimum height constraint */
+.form-input--textarea {
+  min-height: 120px;
 }
 .form-input::placeholder { color: #b0a493; }
 .form-input:focus {
@@ -641,6 +647,7 @@ p  { color: var(--text-muted); line-height: 1.75; }
   align-items: center;
   gap: 0.45rem;
   padding: 0.55rem 1.1rem;
+  min-height: 48px; /* WCAG 2.5.5 touch target */
   border: 1.5px solid var(--border-sand);
   border-radius: 40px;
   font-size: 0.875rem;
@@ -747,7 +754,18 @@ p  { color: var(--text-muted); line-height: 1.75; }
   .suggestion-form__submit { align-self: stretch; text-align: center; }
 
   .role-toggle { gap: 0.5rem; }
-  .role-toggle__option { font-size: 0.82rem; padding: 0.5rem 0.9rem; }
+  /* Keep min-height 48px but tighten side padding on small screens */
+  .role-toggle__option { font-size: 0.82rem; padding: 0.5rem 0.9rem; min-height: 48px; }
+
+  /* ── iOS Auto-Zoom Fix ──────────────────────────────────────────
+     Safari zooms in whenever a focused input's font-size < 16px.
+     Force 1rem (16px) on all text-entry controls on mobile.
+  ───────────────────────────────────────────────────────────────── */
+  .form-input,
+  .form-input--select,
+  select.form-input {
+    font-size: 1rem;
+  }
 
   .footer__inner  { flex-direction: column; text-align: center; }
   .footer__links  { justify-content: center; }
@@ -1043,6 +1061,80 @@ p  { color: var(--text-muted); line-height: 1.75; }
   opacity: 0;
   pointer-events: none;
   tabindex: -1;
+}
+
+
+/* ----------------------------------------------------------------
+   STICKY MOBILE CTA BAR
+   Only visible on screens ≤ 700px when the waitlist form is
+   scrolled out of view. Smoothly animates in/out.
+   ---------------------------------------------------------------- */
+.sticky-cta {
+  display: none; /* hidden on desktop — JS + media query enable it */
+}
+
+@media (max-width: 700px) {
+  .sticky-cta {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+    background: rgba(253, 251, 247, 0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border-sand);
+    box-shadow: 0 -4px 20px rgba(31, 26, 20, 0.08);
+
+    /* Hidden by default — JS toggles .is-visible */
+    transform: translateY(110%);
+    transition: transform 0.35s var(--ease-out);
+    pointer-events: none;
+  }
+
+  .sticky-cta.is-visible {
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .sticky-cta__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 52px;
+    padding: 0.75rem 1.5rem;
+    background: var(--accent-gold);
+    color: #fff;
+    border: none;
+    border-radius: 40px;
+    font-family: var(--font-primary);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: background-color var(--transition), box-shadow var(--transition), transform var(--transition);
+    box-shadow: 0 4px 16px rgba(197, 160, 89, 0.35);
+  }
+
+  .sticky-cta__btn:hover,
+  .sticky-cta__btn:focus-visible {
+    background: var(--accent-gold-bright);
+    box-shadow: 0 6px 20px rgba(197, 160, 89, 0.45);
+  }
+
+  .sticky-cta__btn:active {
+    transform: scale(0.98);
+  }
+
+  .sticky-cta__btn svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex-shrink: 0;
+  }
 }
 
 

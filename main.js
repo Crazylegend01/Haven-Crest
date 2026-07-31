@@ -293,6 +293,45 @@ document.addEventListener('DOMContentLoaded', () => {
   const yearEl = document.getElementById('footer-year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 
+
+  /* ------------------------------------------------------------
+     6. STICKY MOBILE CTA BAR
+        Shows when the waitlist section scrolls fully out of view.
+        Hidden on desktop via CSS (display:none at >700px).
+  ------------------------------------------------------------ */
+  const stickyCta    = document.getElementById('sticky-cta');
+  const stickyBtn    = document.getElementById('sticky-cta-btn');
+  const waitlistSect = document.getElementById('waitlist');
+
+  if (stickyCta && stickyBtn && waitlistSect && 'IntersectionObserver' in window) {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const visible = entry.isIntersecting;
+        stickyCta.classList.toggle('is-visible', !visible);
+        stickyCta.setAttribute('aria-hidden', String(visible));
+      },
+      {
+        // Fire when the waitlist section is fully out of the viewport
+        threshold: 0,
+        rootMargin: '0px 0px -100% 0px',
+      }
+    );
+    observer.observe(waitlistSect);
+
+    stickyBtn.addEventListener('click', () => {
+      const nav       = document.getElementById('main-nav');
+      const navHeight = nav ? nav.offsetHeight : 0;
+      const top = waitlistSect.getBoundingClientRect().top + window.scrollY - navHeight - 16;
+      window.scrollTo({ top, behavior: 'smooth' });
+
+      // Focus the first input after scroll completes
+      setTimeout(() => {
+        const firstInput = waitlistSect.querySelector('input:not([type="hidden"]):not([tabindex="-1"])');
+        firstInput?.focus({ preventScroll: true });
+      }, 500);
+    });
+  }
+
 });
 
 
