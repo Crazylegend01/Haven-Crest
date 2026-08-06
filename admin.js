@@ -44,6 +44,34 @@ var _suggestionFilter = 'all';
 
 
 /* ================================================================
+   BROWSER FINGERPRINT  (silent — captured regardless of typed email)
+   Returns a plain object of signals that are hard to fake and help
+   identify a returning person even if they typed a false email.
+   ================================================================ */
+function getBrowserFingerprint() {
+  var fp = {};
+  try { fp.timezone    = Intl.DateTimeFormat().resolvedOptions().timeZone; }    catch (e) {}
+  try { fp.locale      = navigator.language || navigator.languages[0]; }        catch (e) {}
+  try { fp.screen_res  = screen.width + 'x' + screen.height; }                  catch (e) {}
+  try { fp.color_depth = screen.colorDepth; }                                   catch (e) {}
+  try { fp.platform    = navigator.platform; }                                  catch (e) {}
+  try { fp.cores       = navigator.hardwareConcurrency; }                       catch (e) {}
+  try { fp.touch       = navigator.maxTouchPoints > 0; }                        catch (e) {}
+  try { fp.do_not_track = navigator.doNotTrack; }                               catch (e) {}
+  try {
+    // Canvas fingerprint — a short hash unique to the GPU/font stack
+    var canvas  = document.createElement('canvas');
+    var ctx     = canvas.getContext('2d');
+    ctx.textBaseline = 'top';
+    ctx.font         = '14px Arial';
+    ctx.fillText('Haven&Crest🛡️', 2, 2);
+    fp.canvas_fp = canvas.toDataURL().slice(-40); // last 40 chars = unique suffix
+  } catch (e) {}
+  return fp;
+}
+
+
+/* ================================================================
    SECURITY AUDIT LOGGING
    Fire-and-forget — never throws, never blocks UI.
    ================================================================ */
@@ -168,12 +196,18 @@ document.addEventListener('DOMContentLoaded', function () {
         if (lockInput) lockInput.value = '';
         sessionStorage.setItem(SESSION_KEY, 'true');
         sessionStorage.setItem(SESSION_EMAIL_KEY, enteredEmail.trim().toLowerCase());
-        logAdminEvent('ADMIN_LOGIN', 'LOW', { admin_email: enteredEmail.trim().toLowerCase() });
+        logAdminEvent('ADMIN_LOGIN', 'LOW', {
+          admin_email: enteredEmail.trim().toLowerCase(),
+          fingerprint: getBrowserFingerprint(),
+        });
         revealDashboard(lockScreen, adminShell);
         loadDashboard();
       } else {
         lockError.textContent = 'Incorrect passcode. Please try again.';
-        logAdminEvent('ADMIN_LOGIN_FAILED', 'HIGH', {});
+        logAdminEvent('ADMIN_LOGIN_FAILED', 'HIGH', {
+          admin_email_attempted: enteredEmail.trim().toLowerCase(),
+          fingerprint: getBrowserFingerprint(),
+        });
         if (lockInput) lockInput.value = '';
         if (lockInput) lockInput.focus();
         lockForm.classList.add('lock-form--shake');
