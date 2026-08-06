@@ -842,6 +842,61 @@
   border-color: rgba(245, 158, 11, 0.6);
 }
 
+/* ── Delete button ─────────────────────────────────────────────── */
+.admin-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid rgba(220, 38, 38, 0.25);
+  background: rgba(220, 38, 38, 0.05);
+  color: #dc2626;
+  cursor: pointer;
+  transition: background-color var(--transition), border-color var(--transition), transform var(--transition);
+  flex-shrink: 0;
+}
+.admin-delete-btn svg { width: 13px; height: 13px; }
+.admin-delete-btn:hover {
+  background: rgba(220, 38, 38, 0.12);
+  border-color: rgba(220, 38, 38, 0.5);
+}
+.admin-delete-btn:active { transform: scale(0.92); }
+
+/* Table actions column */
+.admin-table__actions {
+  width: 44px;
+  text-align: center;
+  padding: 0.5rem 0.25rem;
+}
+
+/* Suggestion card: actions row now holds both buttons */
+.suggestion-item__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Delete on suggestion card — slightly larger for touch */
+.admin-delete-btn--card {
+  width: 34px;
+  height: 34px;
+}
+
+/* Screen-reader only utility (used for Actions th) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 
 /* ================================================================
    RESPONSIVE

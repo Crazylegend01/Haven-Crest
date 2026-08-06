@@ -14,6 +14,7 @@
    ================================================================ */
 var ADMIN_PASSCODE = 'HavenCrest2027';       // ← change this
 var SESSION_KEY    = 'hc_admin_unlocked';
+var SESSION_EMAIL_KEY = 'hc_admin_email';
 
 var SUPABASE_URL      = 'https://mszxguwxcpxvbpagtwdv.supabase.co';
 var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zenhndXd4Y3B4dmJwYWd0d2R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzNTgyOTUsImV4cCI6MjEwMDkzNDI5NX0.0axpIOA369GUOKPqxBO5nfTqaXjI2EvVVB8wTViLB_o';
@@ -160,11 +161,14 @@ document.addEventListener('DOMContentLoaded', function () {
       e.preventDefault();
       var entered = lockInput ? lockInput.value.trim() : '';
 
+      var enteredEmail = (document.getElementById('admin-email') || {}).value || '';
+
       if (entered === ADMIN_PASSCODE) {
         lockError.textContent = '';
         if (lockInput) lockInput.value = '';
         sessionStorage.setItem(SESSION_KEY, 'true');
-        logAdminEvent('ADMIN_LOGIN', 'LOW', {});
+        sessionStorage.setItem(SESSION_EMAIL_KEY, enteredEmail.trim().toLowerCase());
+        logAdminEvent('ADMIN_LOGIN', 'LOW', { admin_email: enteredEmail.trim().toLowerCase() });
         revealDashboard(lockScreen, adminShell);
         loadDashboard();
       } else {
@@ -349,7 +353,20 @@ function renderWaitlistTable(rows) {
       '<td class="admin-table__email"><a href="mailto:' + escHtml(row.email || '') + '" class="admin-table__email-link">' + escHtml(row.email || '—') + '</a></td>' +
       '<td><span class="role-badge role-badge--' + escHtml(row.user_role || '') + '">' + capitalise(row.user_role || '—') + '</span></td>' +
       '<td class="admin-table__campus">' + escHtml(row.campus_name || '—') + '</td>' +
-      '<td class="admin-table__date">'   + formatDate(row.created_at) + '</td>';
+      '<td class="admin-table__date">'   + formatDate(row.created_at) + '</td>' +
+      '<td class="admin-table__actions">' +
+        '<button class="admin-delete-btn" aria-label="Delete ' + escHtml(row.full_name || row.email || 'entry') + '" title="Delete entry">' +
+          '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<polyline points="2,4 14,4"/>' +
+            '<path d="M5 4V2h6v2"/>' +
+            '<path d="M6 7v5M10 7v5"/>' +
+            '<rect x="3" y="4" width="10" height="10" rx="1"/>' +
+          '</svg>' +
+        '</button>' +
+      '</td>';
+    tr.querySelector('.admin-delete-btn').addEventListener('click', function () {
+      deleteWaitlistEntry(row.id, row);
+    });
     tbody.appendChild(tr);
   });
 
@@ -468,17 +485,30 @@ function renderSuggestionsGrid(rows) {
         '<span class="status-badge status-badge--' + status + '" id="status-label-' + row.id + '">' +
           (isReviewed ? 'Reviewed' : 'Pending') +
         '</span>' +
-        '<button class="admin-toggle-btn admin-toggle-btn--' + (isReviewed ? 'pending' : 'reviewed') + '" ' +
-          'data-id="' + row.id + '" data-status="' + status + '" ' +
-          'aria-label="' + (isReviewed ? 'Mark as pending' : 'Mark as reviewed') + '">' +
-          (isReviewed
-            ? '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v6M4 6l4 4 4-4"/></svg> Mark Pending'
-            : '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8l4 4 6-6"/></svg> Mark Reviewed') +
-        '</button>' +
+        '<div class="suggestion-item__actions">' +
+          '<button class="admin-toggle-btn admin-toggle-btn--' + (isReviewed ? 'pending' : 'reviewed') + '" ' +
+            'data-id="' + row.id + '" data-status="' + status + '" ' +
+            'aria-label="' + (isReviewed ? 'Mark as pending' : 'Mark as reviewed') + '">' +
+            (isReviewed
+              ? '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v6M4 6l4 4 4-4"/></svg> Mark Pending'
+              : '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8l4 4 6-6"/></svg> Mark Reviewed') +
+          '</button>' +
+          '<button class="admin-delete-btn admin-delete-btn--card" aria-label="Delete suggestion" title="Delete suggestion">' +
+            '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+              '<polyline points="2,4 14,4"/>' +
+              '<path d="M5 4V2h6v2"/>' +
+              '<path d="M6 7v5M10 7v5"/>' +
+              '<rect x="3" y="4" width="10" height="10" rx="1"/>' +
+            '</svg>' +
+          '</button>' +
+        '</div>' +
       '</div>';
 
     card.querySelector('.admin-toggle-btn').addEventListener('click', function (e) {
       handleStatusToggle(e.currentTarget, row);
+    });
+    card.querySelector('.admin-delete-btn').addEventListener('click', function () {
+      deleteSuggestion(row.id, row);
     });
 
     grid.appendChild(card);
@@ -588,6 +618,83 @@ function switchTab(tabId) {
     p.hidden = !active;
     p.classList.toggle('admin-panel--hidden', !active);
   });
+}
+
+
+/* ================================================================
+   DELETE — WAITLIST ENTRY
+   ================================================================ */
+function deleteWaitlistEntry(id, row) {
+  var name = (row.full_name || row.email || 'this entry');
+  if (!confirm('Delete "' + name + '" from the waitlist? This cannot be undone.')) return;
+
+  var sb;
+  try { sb = getClient(); } catch (e) { alert('Cannot connect to database.'); return; }
+
+  var adminEmail = sessionStorage.getItem(SESSION_EMAIL_KEY) || 'unknown';
+
+  sb.from('waitlist')
+    .delete()
+    .eq('id', id)
+    .then(function (res) {
+      if (res.error) {
+        alert('Delete failed: ' + res.error.message);
+        return;
+      }
+      // Remove from local state and re-render
+      _waitlistData = _waitlistData.filter(function (r) { return r.id !== id; });
+      renderWaitlistTable(_waitlistData);
+      renderMetrics();
+      logAdminEvent('ADMIN_DELETE_WAITLIST', 'MEDIUM', {
+        admin_email:   adminEmail,
+        deleted_id:    id,
+        deleted_name:  row.full_name  || null,
+        deleted_email: row.email      || null,
+        deleted_role:  row.user_role  || null,
+        campus:        row.campus_name || null,
+      });
+    })
+    .catch(function (err) {
+      alert('Delete failed: ' + (err && err.message ? err.message : 'Unknown error'));
+    });
+}
+
+
+/* ================================================================
+   DELETE — SUGGESTION
+   ================================================================ */
+function deleteSuggestion(id, row) {
+  var preview = (row.suggestion_text || '').slice(0, 60) || 'this suggestion';
+  if (!confirm('Delete "' + preview + '…"? This cannot be undone.')) return;
+
+  var sb;
+  try { sb = getClient(); } catch (e) { alert('Cannot connect to database.'); return; }
+
+  var adminEmail = sessionStorage.getItem(SESSION_EMAIL_KEY) || 'unknown';
+
+  sb.from('suggestions')
+    .delete()
+    .eq('id', id)
+    .then(function (res) {
+      if (res.error) {
+        alert('Delete failed: ' + res.error.message);
+        return;
+      }
+      // Remove from local state and re-render
+      _suggestionsData = _suggestionsData.filter(function (r) { return r.id !== id; });
+      renderSuggestionsGrid(_suggestionsData);
+      renderMetrics();
+      logAdminEvent('ADMIN_DELETE_SUGGESTION', 'MEDIUM', {
+        admin_email:    adminEmail,
+        deleted_id:     id,
+        deleted_author: row.author_name    || null,
+        deleted_cat:    row.category       || null,
+        deleted_text:   (row.suggestion_text || '').slice(0, 120),
+      });
+    })
+    .catch(function (err) {
+      alert('Delete failed: ' + (err && err.message ? err.message : 'Unknown error'));
+    });
 }
 
 

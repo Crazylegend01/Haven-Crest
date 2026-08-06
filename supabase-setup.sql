@@ -132,6 +132,18 @@ CREATE POLICY "Admin SELECT on suggestions"
   TO anon
   USING (true);
 
+-- waitlist: admin can delete entries
+CREATE POLICY "Admin DELETE on waitlist"
+  ON public.waitlist
+  FOR DELETE
+  USING (true);   -- anon key used from locked admin dashboard; tighten if you add auth
+
+-- suggestions: admin can delete entries
+CREATE POLICY "Admin DELETE on suggestions"
+  ON public.suggestions
+  FOR DELETE
+  USING (true);   -- same reasoning as above
+
 -- suggestions: admin can toggle status (pending ↔ reviewed)
 CREATE POLICY "Admin UPDATE status on suggestions"
   ON public.suggestions
@@ -156,6 +168,8 @@ ALTER TABLE public.suggestions
 --  fraud investigation.
 --
 --  action_type values in use:
+--    ADMIN_DELETE_WAITLIST   — admin deleted a waitlist entry
+--    ADMIN_DELETE_SUGGESTION — admin deleted a suggestion
 --    WAITLIST_SUBMIT     — successful waitlist signup
 --    SUGGESTION_SUBMIT   — successful suggestion submission
 --    RATE_LIMIT_HIT      — client-side rate limit exceeded
@@ -226,7 +240,7 @@ GRANT USAGE ON SCHEMA public TO anon;
 GRANT INSERT          ON public.waitlist              TO anon;
 GRANT INSERT          ON public.suggestions           TO anon;
 GRANT INSERT          ON public.enquiries             TO anon;
-GRANT SELECT          ON public.waitlist              TO anon;
-GRANT SELECT, UPDATE  ON public.suggestions           TO anon;
+GRANT SELECT, DELETE  ON public.waitlist              TO anon;
+GRANT SELECT, UPDATE, DELETE ON public.suggestions   TO anon;
 GRANT INSERT          ON public.security_audit_logs   TO anon;
 -- No SELECT grant on security_audit_logs for anon — RLS enforces this.

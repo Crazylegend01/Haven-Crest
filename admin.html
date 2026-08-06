@@ -41,6 +41,18 @@
 
         <form id="lock-form" class="lock-form" novalidate>
           <div class="form-group">
+            <label class="form-label" for="admin-email">Your email</label>
+            <input
+              class="form-input"
+              type="email"
+              id="admin-email"
+              name="email"
+              placeholder="you@example.com"
+              autocomplete="email"
+              required
+            />
+          </div>
+          <div class="form-group">
             <label class="form-label" for="admin-passcode">Passcode</label>
             <div class="lock-input-wrap">
               <input
@@ -295,6 +307,7 @@
                     <th scope="col">Role</th>
                     <th scope="col">Campus</th>
                     <th scope="col">Signed Up</th>
+                    <th scope="col"><span class="sr-only">Actions</span></th>
                   </tr>
                 </thead>
                 <tbody id="waitlist-tbody">
