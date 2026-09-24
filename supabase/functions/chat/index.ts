@@ -7,19 +7,21 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Always return 200 OK for OPTIONS preflight checks
+  // 1. Handle CORS Preflight (OPTIONS) using status 200 + "ok" body
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { status: 200, headers: corsHeaders });
   }
 
   try {
     const { message } = await req.json();
+
+    // 2. Load API Keys (Supports 1 key, 7 keys, or 20 keys)
     const keysString = Deno.env.get('GEMINI_API_KEYS') || '';
     const apiKeys = keysString.split(',').map((k) => k.trim()).filter(Boolean);
 
     if (apiKeys.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'GEMINI_API_KEYS not set in Supabase Secrets.' }),
+        JSON.stringify({ error: 'GEMINI_API_KEYS secret is missing in Supabase.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -27,6 +29,7 @@ serve(async (req) => {
     const model = Deno.env.get('GEMINI_MODEL') || 'gemini-1.5-flash';
     let replyText = null;
 
+    // 3. Iterate through all 7 keys on failure/rate limit
     for (let i = 0; i < apiKeys.length; i++) {
       try {
         const response = await fetch(
@@ -43,15 +46,15 @@ serve(async (req) => {
         if (response.ok) {
           const data = await response.json();
           replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (replyText) break;
+          if (replyText) break; // Success! Exit key loop
         }
       } catch (err) {
-        console.warn(`Key ${i + 1} failed:`, err);
+        console.warn(`Key #${i + 1} failed:`, err);
       }
     }
 
     return new Response(
-      JSON.stringify({ reply: replyText || "AI service busy. Try again shortly." }),
+      JSON.stringify({ reply: replyText || "AI service busy. Please try again shortly." }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
