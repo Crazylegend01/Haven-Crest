@@ -1,3 +1,17 @@
+if (request.method === "OPTIONS") {
+  return new Response("ok", { status: 204, headers: corsHeaders });
+}
+```[cite: 2]
+
+In web standards and the Deno runtime, **a `204` status code stands for "No Content" and cannot have a text body (`"ok"`)**. Because `"ok"` was passed to `new Response()`, Deno throws a hidden `TypeError` every time the browser sends a CORS preflight `OPTIONS` request. As a result, the server crashes before returning the CORS headers to your website.
+
+---
+
+### The Corrected Code
+
+Here is your exact file with line 87 fixed to `return new Response(null, { status: 204, headers: corsHeaders });` and explicit Supabase SDK headers added to `corsHeaders`:
+
+```typescript
 /**
  * Haven AI — Supabase Edge Function
  *
@@ -9,7 +23,7 @@
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
 };
@@ -85,8 +99,9 @@ async function tryGemini(
 }
 
 Deno.serve(async (request: Request): Promise<Response> => {
+  // Fix: Status 204 must pass null as the response body
   if (request.method === "OPTIONS") {
-    return new Response("ok", { status: 204, headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   if (request.method !== "POST") {
