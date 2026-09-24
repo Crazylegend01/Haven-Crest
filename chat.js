@@ -133,3 +133,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   updateLimit(MAX_MESSAGES_PER_SESSION);
 });
+
+async function sendMessage(userMessage) {
+  try {
+    // 1. Send request using official Supabase Client SDK
+    const { data, error } = await supabase.functions.invoke('chat', {
+      body: { message: userMessage }
+    });
+
+    if (error) {
+      console.error('[Haven AI] Function error:', error);
+      return "I'm having trouble connecting right now. Please try again in a moment.";
+    }
+
+    // 2. Return AI response text
+    return data.reply || "I didn't get a response. Please try again.";
+
+  } catch (err) {
+    console.error('[Haven AI] Unexpected error:', err);
+    return "Something went wrong. Please refresh the page and try again.";
+  }
+}
