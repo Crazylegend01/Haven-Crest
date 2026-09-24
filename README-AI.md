@@ -1,31 +1,53 @@
-# Haven AI setup
+# Haven AI — Supabase Edge Function setup
 
-Haven AI uses a Node/Express backend so the Gemini API key never reaches the browser.
+Haven AI now uses a Supabase Edge Function instead of a custom Node server. The Gemini keys remain server-side in Supabase secrets, and the function tries multiple keys sequentially when a key is rate-limited, invalid, or Gemini is temporarily unavailable.
 
-## Run locally or on Replit
+## 1. Add the function
 
-1. Install dependencies:
+The deployable function is:
 
-   ```bash
-   npm install
-   ```
+```text
+supabase/functions/chat/index.ts
+```
 
-2. Add `GEMINI_API_KEY` to Replit Secrets (or your hosting provider's environment variables). Do not put the real key in `.env`, JavaScript, or HTML.
+From the project root, with the Supabase CLI linked to the Haven & Crest project:
 
-3. Start the site:
+```bash
+supabase functions deploy chat
+```
 
-   ```bash
-   npm start
-   ```
+## 2. Add Gemini secrets
 
-The site is served at the same origin as `POST /api/chat`. A health check is available at `GET /api/health`.
+Store a comma-separated list of Gemini API keys as a Supabase secret. Never put these keys in HTML, browser JavaScript, or the public repository.
 
-## Rate limiting
+```bash
+supabase secrets set GEMINI_API_KEYS="key_one,key_two,key_three"
+```
 
-The backend assigns an HTTP-only session cookie and permits 10 chat messages per session. Session counters are held in memory and expire after 24 hours. This is intentionally lightweight for a single-server deployment; use a shared store such as Supabase or Redis if you later run multiple server instances.
+Optional model override:
 
-## Existing Supabase project
+```bash
+supabase secrets set GEMINI_MODEL="gemini-1.5-flash"
+```
 
-The existing frontend continues to use the Supabase project in `supabaseClient.js` for waitlist, suggestions, enquiries, and security audit logs. Haven AI does not store chat transcripts in Supabase by default.
+The function defaults to `gemini-1.5-flash` when `GEMINI_MODEL` is not set.
 
-The Supabase SQL setup remains in `supabase-setup.sql`. The public browser client uses the anon key as before; the Gemini key is server-only.
+## 3. Frontend connection
+
+`chat.js` imports the existing Supabase client and calls:
+
+```javascript
+supabase.functions.invoke('chat', {
+  body: { message, history }
+});
+```
+
+The frontend already has the Supabase URL and anon key in `supabaseClient.js`. The anon key is allowed in browser code; the Gemini keys are not.
+
+## Notes
+
+- CORS and `OPTIONS` preflight handling are included.
+- Gemini failures automatically advance to the next configured key.
+- If every key fails, the function returns a clean HTTP 503 response.
+- The widget keeps the existing 10-message-per-browser-session limit.
+- Chat transcripts are not stored in Supabase by this function.

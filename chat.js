@@ -1,12 +1,14 @@
 /**
  * Haven AI Housing Assistant
  *
- * The Gemini API is never called from the browser. This module sends
- * conversation turns to the same-origin /api/chat server route.
+ * The Gemini API is never called from the browser. This module invokes
+ * the Supabase Edge Function, which keeps API keys server-side and handles
+ * Gemini key rotation/failover.
  */
 
+import { supabase } from './supabaseClient.js?v=5';
+
 const MAX_MESSAGES_PER_SESSION = 10;
-const API_URL = window.HAVEN_AI_API_URL || '/api/chat';
 
 document.addEventListener('DOMContentLoaded', () => {
   const root = document.getElementById('haven-ai');
@@ -101,18 +103,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setTyping(true);
 
     try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ messages: conversation }),
+      const { data, error } = await supabase.functions.invoke('chat', {
+        body: {
+          message: text,
+          history: conversation.slice(-11, -1),
+        },
       });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const error = new Error(data.error || 'Haven AI could not respond right now.');
-        error.remaining = data.remaining;
-        throw error;
-      }
+      if (error) throw error;
 
       const reply = typeof data.reply === 'string' && data.reply.trim()
         ? data.reply.trim()
@@ -120,16 +117,13 @@ document.addEventListener('DOMContentLoaded', () => {
       conversation.push({ role: 'assistant', text: reply });
       setTyping(false);
       appendMessage('assistant', reply);
-      updateLimit(data.remaining);
     } catch (error) {
       setTyping(false);
-      if (typeof error.remaining === 'number') {
-        updateLimit(error.remaining);
-      }
       appendMessage(
         'assistant',
-        error.message || 'I could not reach Haven AI. Please try again in a moment.',
+        'I’m having trouble connecting right now. Please try again in a moment.',
       );
+      console.error('[Haven AI] Chat error:', error);
     } finally {
       setBusy(false);
       if (sentCount < MAX_MESSAGES_PER_SESSION) input.focus();

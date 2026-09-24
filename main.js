@@ -21,7 +21,7 @@ import {
   detectSuspiciousContent,
   isBotDetected,
   logSecurityEvent,
-} from './supabaseClient.js?v=4';
+} from './supabaseClient.js?v=5';
 
 
 /* ================================================================

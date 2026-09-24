@@ -30,6 +30,26 @@ async function getClient() {
   return _client;
 }
 
+/*
+ * Public SDK-shaped facade used by the chat widget.
+ * The actual Supabase client is still loaded lazily so the existing static
+ * site keeps working if the CDN is temporarily unavailable.
+ */
+export const supabase = {
+  functions: {
+    async invoke(functionName, options = {}) {
+      const sb = await getClient();
+      if (!sb) {
+        return {
+          data: null,
+          error: new Error('Supabase is not available right now.'),
+        };
+      }
+      return sb.functions.invoke(functionName, options);
+    },
+  },
+};
+
 
 /* ================================================================
    FORM SUBMISSIONS
